@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.9 — 2026-10-21
+- **Install the app**: on first visit, phones and PCs (Chrome, Edge, Android; Safari on iPhone shows "Share → Add to Home Screen" steps) get an "Install the Azizo app" bar. "Not now" hides it for 7 days; it never shows again once installed or when already running as an app. A footer "Install app" link brings it back.
+- **Automatic updates**: the app checks for a new version when opened, when you return to it, and every 30 minutes. When one is found, an "A new version is ready — Update now" bar appears; tapping it reloads into the new version. Footer shows "App v1.9 · Check for updates" for a manual check.
+- Manifest gains an app id, separate maskable icons and home-screen shortcuts (Order meat, Meat Budget Planner, Areas We Serve). New `pwa.js` on all customer pages.
+- Needs HTTPS (or localhost) to install; staff, rider and admin screens are unchanged.
+- **For future releases**: bump `CACHE_NAME` in `sw.js` and the version in `pwa.js` whenever you change site files. That is what tells installed apps an update exists.
+
 ## v1.8 — 2026-10-21
 - **Repeat-customer layer**: the site remembers name, phone, area and address on the device and pre-fills checkout; a "Your usual" shelf of one-tap chips (shop and cart); optional standing orders (Weekly / Bi-weekly / Monthly) that appear in the staff Standing tab with a DUE badge and a one-tap "Create this order".
 - **Customer status messages**: staff and rider screens get a one-tap "Tell customer" WhatsApp button prefilled for the current status. (Fully automatic messages need the WhatsApp Business API, not included.)

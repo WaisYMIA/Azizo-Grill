@@ -37,13 +37,7 @@
     // live product catalog, accounts, and order history all quietly fall back to
     // products.json / local-only behavior, and WhatsApp checkout keeps working exactly
     // as before. Nothing breaks either way.
-    //
-    // THIS COPY IS PRE-SET FOR LOCAL/OFFLINE PHONE TESTING (see azizo-phone-test-guide.md):
-    // server.js in backend/ serves this very site/ folder plus the API from one process
-    // on your phone, so "http://localhost:3000" always means "this same phone" — no
-    // domain, no internet, no fixed IP needed. Change this back to "" (or your real
-    // domain) before you deploy to cPanel; this value will NOT work on a real server.
-    API_BASE_URL: "http://localhost:3000",
+    API_BASE_URL: "",
 
     // ---- Staff / Admin access (two-tier — see the "Staff & Admin Access" section of
     // the deployment guide for the full explanation) ----

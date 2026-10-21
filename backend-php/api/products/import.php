@@ -26,12 +26,12 @@ if ($missing) {
 }
 
 $pdo = get_db();
-$insert = $pdo->prepare('INSERT INTO products (id, category_group, cat, kind, name, description, price, unit, img, badges, origin, in_stock)
-    VALUES (:id, :category_group, :cat, :kind, :name, :description, :price, :unit, :img, :badges, :origin, :in_stock)
+$insert = $pdo->prepare('INSERT INTO products (id, category_group, cat, kind, name, description, price, unit, img, badges, origin, in_stock, cost_price)
+    VALUES (:id, :category_group, :cat, :kind, :name, :description, :price, :unit, :img, :badges, :origin, :in_stock, :cost_price)
     ON DUPLICATE KEY UPDATE
       category_group=VALUES(category_group), cat=VALUES(cat), kind=VALUES(kind), name=VALUES(name),
       description=VALUES(description), price=VALUES(price), unit=VALUES(unit),
-      img=IF(VALUES(img) = "", img, VALUES(img)), badges=VALUES(badges), origin=VALUES(origin), in_stock=VALUES(in_stock)');
+      img=IF(VALUES(img) = "", img, VALUES(img)), badges=VALUES(badges), origin=VALUES(origin), in_stock=VALUES(in_stock), cost_price=VALUES(cost_price)');
 
 $created = 0; $updated = 0; $errors = [];
 $existingIds = array_column($pdo->query('SELECT id FROM products')->fetchAll(), 'id');
@@ -66,6 +66,7 @@ foreach ($parsed['rows'] as $i => $row) {
             'img' => $row['img'] ?? '', 'badges' => badges_to_storage($row['badges'] ?? ''),
             'origin' => $row['origin'] ?? '',
             'in_stock' => isset($row['inStock']) && $row['inStock'] !== '' ? (int)(bool)$row['inStock'] : 1,
+            'cost_price' => max(0, (int)($row['cost_price'] ?? 0)),
         ]);
         if (in_array($id, $existingIds, true)) $updated++; else $created++;
     } catch (PDOException $e) {

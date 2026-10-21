@@ -49,16 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         json_error($e->getMessage(), 400);
     }
 
-    $pdo->prepare('INSERT INTO products (id, category_group, cat, kind, name, description, price, unit, img, badges, origin, in_stock)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    $pdo->prepare('INSERT INTO products (id, category_group, cat, kind, name, description, price, unit, img, badges, origin, in_stock, cost_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([
             $id, $categoryGroup, $cat, $_POST['kind'] ?? null, $name, $_POST['desc'] ?? '',
             (int)$price, $unit, $imgPath, badges_to_storage($_POST['badges'] ?? ''), $_POST['origin'] ?? '',
-            isset($_POST['inStock']) ? (int)!!$_POST['inStock'] : 1,
+            isset($_POST['inStock']) ? (int)!!$_POST['inStock'] : 1, max(0, (int)($_POST['cost_price'] ?? 0)),
         ]);
 
     $row = $pdo->query('SELECT * FROM products WHERE id = ' . $pdo->quote($id))->fetch();
-    json_response(['ok' => true, 'product' => serialize_product($row)], 201);
+    json_response(['ok' => true, 'product' => serialize_product($row, true)], 201);
 }
 
 json_error('Method not allowed', 405);

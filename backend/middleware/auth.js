@@ -3,6 +3,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const SECRET = JWT_SECRET || 'insecure-dev-only-secret-change-me';
 function signCustomerToken(c) { return jwt.sign({ id: c.id, phone: c.phone, role: 'customer' }, SECRET, { expiresIn: '30d' }); }
 function signAdminToken() { return jwt.sign({ role: 'admin' }, SECRET, { expiresIn: '12h' }); }
+function signStaffToken() { return jwt.sign({ role: 'staff' }, SECRET, { expiresIn: '12h' }); }
 function requireAuth(req, res, next) {
   const h = req.headers.authorization;
   if (!h || !h.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing or invalid Authorization header' });
@@ -15,4 +16,11 @@ function requireAdmin(req, res, next) {
     next();
   });
 }
-module.exports = { signCustomerToken, signAdminToken, requireAuth, requireAdmin, SECRET };
+// Staff (counter / kitchen / dispatch) can work orders and stock; the admin can do all of that too.
+function requireStaff(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'staff' && req.user.role !== 'admin') return res.status(403).json({ error: 'Staff access required' });
+    next();
+  });
+}
+module.exports = { signCustomerToken, signAdminToken, signStaffToken, requireAuth, requireAdmin, requireStaff, SECRET };

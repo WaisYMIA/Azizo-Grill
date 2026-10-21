@@ -27,4 +27,5 @@ $o = $q->fetch();
 if (!$o) $notFound();
 // Status-only reply: no name, phone, address, items or prices.
 json_response(['order' => ['id' => (int)$o['id'], 'status' => $o['status'], 'fulfilment' => $o['fulfilment'],
-    'branch' => $o['branch'], 'pickup_time' => $o['pickup_time'], 'created_at' => $o['created_at']]]);
+    'branch' => $o['branch'], 'pickup_time' => $o['pickup_time'], 'created_at' => $o['created_at'],
+    'reviewed' => (bool)$pdo->query('SELECT 1 FROM reviews WHERE order_id = ' . (int)$o['id'])->fetchColumn()]]);

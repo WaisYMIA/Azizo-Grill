@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../lib/auth_guard.php';
 require_once __DIR__ . '/../../db.php';
 cors_and_preflight();
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json_error('GET required', 405);
-require_admin();
+require_staff();
 
 $id = $_GET['id'] ?? '';
 $pdo = get_db();

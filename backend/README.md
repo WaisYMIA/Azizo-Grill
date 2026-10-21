@@ -72,6 +72,9 @@ hosted Postgres is a contained change mostly isolated to `db.js`.
 
 All admin/customer routes expect `Authorization: Bearer <token>`.
 
+## API endpoints added in v1.8
+Orders: `GET /api/orders/standing` (staff), `POST /api/orders/:id/repeat` (staff). Reviews: `POST /api/reviews`, `GET /api/reviews` (approved), admin: `GET /api/reviews/all`, `PATCH`/`DELETE /api/reviews/:id`. Branch stock: `GET /api/branch-stock`, `POST /api/branch-stock` (staff). Areas: `/api/areas`. The full table is in `DOCUMENTATION.md`.
+
 ## Deploying (Render.com example — free tier, persistent disk)
 
 1. Push this `backend/` folder to a GitHub repo (separate from or alongside the site repo)

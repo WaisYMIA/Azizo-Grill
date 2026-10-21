@@ -17,3 +17,10 @@ function require_admin(): array {
     if (($payload['role'] ?? null) !== 'admin') json_error('Admin access required', 403);
     return $payload;
 }
+
+/** Staff or admin: the order queue, status updates and the branch directory. */
+function require_staff(): array {
+    $payload = require_auth();
+    if (!in_array($payload['role'] ?? null, ['staff', 'admin'], true)) json_error('Staff access required', 403);
+    return $payload;
+}

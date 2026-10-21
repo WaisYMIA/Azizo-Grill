@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config.php';
 /** Sends the standard CORS headers and handles the OPTIONS preflight request. */
 function cors_and_preflight(): void {
     header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGIN);
-    header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization');
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(204);

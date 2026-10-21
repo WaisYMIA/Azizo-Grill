@@ -55,6 +55,9 @@ environment variables), and point your web server's document root at
   delivery-distance pricing, replace placeholder product photos via the
   admin dashboard, and verify branch GPS coordinates.
 
+## What is new in v1.9
+Install prompt for phones and PCs, plus automatic update checks. See `CHANGELOG.md` and `DOCUMENTATION.md`.
+
 ## What is in this version (v1.8)
 
 The full feature guide, staff/admin handbook, delivery-pricing formula and API reference are in **`DOCUMENTATION.md`**.

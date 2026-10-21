@@ -253,3 +253,10 @@ Database changes are applied automatically on start-up (new tables and columns a
 - Customer memory (your usual, saved details) is per device and browser; it is not an account feature.
 - Automatic WhatsApp status messages, card payments and Google Reviews import are not included.
 - The Node backend is the complete one; the PHP products API has no groceries group.
+
+## Installing the app and automatic updates (v1.9)
+
+- **Install:** visitors see an install bar on first visit (Android/Chrome/Edge/PC). On iPhone it shows the Add to Home Screen steps. It requires HTTPS, so it works on your live domain and on `localhost`, not on a plain `http://192.168...` address.
+- **Updates:** installed apps check for a new version on open, on return and every 30 minutes, then offer "Update now".
+- **Releasing an update:** change the site files, then edit two things: `CACHE_NAME` in `site/sw.js` (e.g. `azizo-v20`) and `APP_VERSION` in `site/pwa.js`. Upload. Visitors get the prompt automatically. Without the `CACHE_NAME` bump, apps will not know anything changed.
+- On cPanel, make sure `sw.js` is not cached by the server for long (default settings are fine).

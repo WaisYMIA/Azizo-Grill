@@ -20,7 +20,7 @@ $action = $_GET['action'] ?? '';
 header('Cache-Control: no-store');
 
 if ($method === 'GET' && $action === 'all') {
-    require_admin();
+    require_staff();
     $rows = $pdo->query('SELECT * FROM branches ORDER BY is_main DESC, sort_order, name')->fetchAll();
     json_response(['branches' => array_map('branch_out', $rows)]);
 }

@@ -38,11 +38,12 @@ $fields = [
     'badges' => array_key_exists('badges', $_POST) ? badges_to_storage($_POST['badges']) : $existing['badges'],
     'origin' => array_key_exists('origin', $_POST) ? $_POST['origin'] : $existing['origin'],
     'in_stock' => isset($_POST['inStock']) ? (int)!!$_POST['inStock'] : $existing['in_stock'],
+    'cost_price' => isset($_POST['cost_price']) ? max(0, (int)$_POST['cost_price']) : (int)($existing['cost_price'] ?? 0),
 ];
 
-$pdo->prepare('UPDATE products SET category_group=?, cat=?, kind=?, name=?, description=?, price=?, unit=?, img=?, badges=?, origin=?, in_stock=? WHERE id=?')
+$pdo->prepare('UPDATE products SET category_group=?, cat=?, kind=?, name=?, description=?, price=?, unit=?, img=?, badges=?, origin=?, in_stock=?, cost_price=? WHERE id=?')
     ->execute([...array_values($fields), $id]);
 
 $updatedStmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
 $updatedStmt->execute([$id]);
-json_response(['ok' => true, 'product' => serialize_product($updatedStmt->fetch())]);
+json_response(['ok' => true, 'product' => serialize_product($updatedStmt->fetch(), true)]);

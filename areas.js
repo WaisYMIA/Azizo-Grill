@@ -1,85 +1,92 @@
-const express = require('express');
-const db = require('../db');
-const { requireAdmin, requireStaff } = require('../middleware/auth');
-const router = express.Router();
+/* Areas We Serve - uses the globals from app.js (branches, areasList, DELIVERY_CFG, rankBranches, areaQuote, ...). */
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const AREA_KEY = 'azizoArea';
+  let quotes = [];   // [{area, q}]
 
-function noStore(req, res, next) { res.set('Cache-Control', 'no-store'); next(); }
-
-const DEFAULT_CFG = { baseFee: 100, perKm: 25, bandKm: 2, maxFee: 450, maxKm: 30, roadFactor: 1.3, nearerBranchKm: 2.5 };
-function getConfig() {
-  let saved = {};
-  try { const r = db.prepare("SELECT value FROM meta WHERE key = 'delivery_config'").get(); if (r) saved = JSON.parse(r.value); } catch (e) {}
-  return Object.assign({}, DEFAULT_CFG, saved);
-}
-const toArea = r => ({ id: r.id, region: r.region, name: r.name, corridor: r.corridor || '', lat: r.lat, lng: r.lng, active: !!r.active, sortOrder: r.sort_order });
-const clean = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
-const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
-
-// Public: only zones admin has ticked as served. Distance and fee are worked out in the browser
-// from the live branch list, so a hidden/closed branch drops out of every quote straight away.
-router.get('/', noStore, (req, res) => {
-  const rows = db.prepare('SELECT * FROM areas WHERE active = 1 ORDER BY sort_order, name').all();
-  res.json({ config: getConfig(), areas: rows.map(toArea) });
-});
-router.get('/all', requireStaff, noStore, (req, res) => {
-  const rows = db.prepare('SELECT * FROM areas ORDER BY sort_order, name').all();
-  res.json({ config: getConfig(), areas: rows.map(toArea) });
-});
-
-router.post('/config', requireAdmin, (req, res) => {
-  const b = req.body || {}, cfg = getConfig(), next = {};
-  const limits = { baseFee: [0, 5000], perKm: [0, 500], bandKm: [0.5, 20], maxFee: [0, 20000], maxKm: [1, 200], roadFactor: [1, 2.5], nearerBranchKm: [0, 50] };
-  for (const k of Object.keys(limits)) {
-    const v = b[k] === undefined ? cfg[k] : Number(b[k]);
-    if (!Number.isFinite(v) || v < limits[k][0] || v > limits[k][1]) return res.status(400).json({ error: `${k} must be a number between ${limits[k][0]} and ${limits[k][1]}` });
-    next[k] = v;
+  function buildQuotes(){
+    quotes = areasList.map(a => ({area:a, q: areaQuote(a)})).filter(x => x.q);
   }
-  db.prepare("INSERT INTO meta (key, value) VALUES ('delivery_config', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(next));
-  res.json({ ok: true, config: next });
-});
 
-// Tick / untick many zones at once: {active, region?} for a whole region, {active, ids:[...]} for a list,
-// or {active, all:true}.
-router.post('/bulk', requireAdmin, (req, res) => {
-  const b = req.body || {}, active = b.active ? 1 : 0;
-  let info;
-  if (Array.isArray(b.ids) && b.ids.length) {
-    const st = db.prepare('UPDATE areas SET active = ? WHERE id = ?');
-    info = { changes: db.transaction(() => b.ids.reduce((n, id) => n + st.run(active, String(id)).changes, 0))() };
-  } else if (b.region) info = db.prepare('UPDATE areas SET active = ? WHERE region = ?').run(active, String(b.region));
-  else if (b.all) info = db.prepare('UPDATE areas SET active = ?').run(active);
-  else return res.status(400).json({ error: 'Say which zones: ids, region or all' });
-  res.json({ ok: true, changed: info.changes });
-});
+  function renderList(filter){
+    const f = (filter || '').trim().toLowerCase();
+    const regions = {};
+    quotes.forEach(x => {
+      if(f && !(x.area.name + ' ' + x.area.region).toLowerCase().includes(f)) return;
+      (regions[x.area.region] = regions[x.area.region] || []).push(x);
+    });
+    const names = Object.keys(regions);
+    $('arList').innerHTML = names.map(r => {
+      const zs = regions[r];
+      const cor = zs[0].area.corridor ? `<div class="ar-cor">${esc(zs[0].area.corridor)}</div>` : '';
+      return `<div class="ar-card"><h3>${esc(r)}</h3>${cor}<ul class="ar-zones">` + zs.map(x =>
+        `<li><button type="button" class="ar-zone" data-id="${esc(x.area.id)}"><span class="ar-zname">${esc(x.area.name)}</span>` +
+        `<span class="ar-zmeta">${esc(x.q.branch.name)} · ~${x.q.km.toFixed(0)} km</span><span class="ar-fee">KSh ${x.q.fee}</span></button></li>`).join('') + '</ul></div>';
+    }).join('');
+    $('arEmpty').style.display = names.length ? 'none' : 'block';
+  }
 
-router.post('/', requireAdmin, (req, res) => {
-  const b = req.body || {}, has = k => Object.prototype.hasOwnProperty.call(b, k);
-  let id = clean(b.id, 50).toLowerCase();
-  const existing = id ? db.prepare('SELECT * FROM areas WHERE id = ?').get(id) : null;
-  const name = clean(b.name, 80);
-  if (!existing && (!name || !clean(b.region, 80))) return res.status(400).json({ error: 'A zone needs a region and a name' });
-  if (!id) { id = slugify(name); let n = 2; while (db.prepare('SELECT 1 FROM areas WHERE id = ?').get(id)) id = slugify(name) + '-' + n++; }
-  const base = existing || { id, region: '', name: '', corridor: '', lat: null, lng: null, active: 0,
-    sort_order: db.prepare('SELECT COALESCE(MAX(sort_order),0)+1 AS n FROM areas').get().n };
-  const m = {
-    id, region: has('region') ? clean(b.region, 80) : base.region, name: has('name') ? name : base.name,
-    corridor: has('corridor') ? clean(b.corridor, 60) : base.corridor,
-    lat: has('lat') ? Number(b.lat) : base.lat, lng: has('lng') ? Number(b.lng) : base.lng,
-    active: has('active') ? (b.active ? 1 : 0) : base.active,
-    sort_order: has('sortOrder') && Number.isFinite(Number(b.sortOrder)) ? Math.round(Number(b.sortOrder)) : base.sort_order,
-  };
-  if (!m.name || !m.region) return res.status(400).json({ error: 'A zone needs a region and a name' });
-  if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) return res.status(400).json({ error: 'Latitude and longitude are required - they decide distance and delivery fee' });
-  if (m.lat < -4.9 || m.lat > 5.1 || m.lng < 33.9 || m.lng > 41.9) return res.status(400).json({ error: 'Those coordinates are outside Kenya - latitude first, e.g. -1.2921, 36.8219' });
-  db.prepare(`INSERT INTO areas (id, region, name, corridor, lat, lng, active, sort_order) VALUES (@id, @region, @name, @corridor, @lat, @lng, @active, @sort_order)
-    ON CONFLICT(id) DO UPDATE SET region=excluded.region, name=excluded.name, corridor=excluded.corridor, lat=excluded.lat, lng=excluded.lng, active=excluded.active, sort_order=excluded.sort_order`).run(m);
-  res.status(existing ? 200 : 201).json({ ok: true, area: toArea(db.prepare('SELECT * FROM areas WHERE id = ?').get(id)) });
-});
+  function fillSelect(){
+    const regions = {};
+    areasList.forEach(a => { (regions[a.region] = regions[a.region] || []).push(a); });
+    $('arSelect').innerHTML = '<option value="">Choose your area…</option>' +
+      Object.keys(regions).map(r => `<optgroup label="${esc(r)}">${regions[r].map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</optgroup>`).join('');
+  }
 
-router.delete('/:id', requireAdmin, (req, res) => {
-  const r = db.prepare('DELETE FROM areas WHERE id = ?').run(req.params.id);
-  if (!r.changes) return res.status(404).json({ error: 'Zone not found' });
-  res.json({ ok: true });
-});
+  function showResult(area){
+    const box = $('arResult');
+    if(!area){ box.innerHTML = ''; return; }
+    const q = areaQuote(area);
+    if(!q){ box.innerHTML = ''; return; }
+    const free = CONFIG.FREE_DELIVERY_THRESHOLD;
+    box.innerHTML = `<div class="ar-ok"><strong>Yes - we deliver to ${esc(area.name)}.</strong><br>` +
+      `Served from <strong>${esc(q.branch.name)}</strong> (~${q.km.toFixed(1)} km by road). Delivery from <strong>KSh ${q.fee}</strong>` +
+      `${free ? `, <strong>free</strong> on orders of KSh ${free} and above` : ''}.` +
+      `<br><a class="btn" href="fresh-market.html" id="arShop">Shop now for ${esc(area.name)}</a></div>`;
+    try{ localStorage.setItem(AREA_KEY, area.id); }catch(e){}
+  }
 
-module.exports = router;
+  function renderBands(){
+    const c = DELIVERY_CFG, rows = [];
+    let lo = 0;
+    for(let i = 1; i <= 40; i++){
+      const hi = i * c.bandKm; if(lo >= c.maxKm) break;
+      const fee = Math.min(c.maxFee, Math.round((c.baseFee + c.perKm * hi) / 10) * 10);
+      rows.push(`<tr><td>${lo} – ${Math.min(hi, c.maxKm)} km</td><td>KSh ${fee}</td></tr>`);
+      lo = hi; if(fee >= c.maxFee && i > 1) { rows.pop(); rows.push(`<tr><td>${lo - c.bandKm} – ${c.maxKm} km</td><td>KSh ${c.maxFee}</td></tr>`); break; }
+    }
+    $('arBands').innerHTML = '<tr><th>Road distance from your branch</th><th>Delivery fee</th></tr>' + rows.join('');
+    $('arPricingText').textContent = `Delivery is priced by road distance from the branch nearest to you, in ${c.bandKm} km steps, so areas at a similar distance share one price. Beyond ${c.maxKm} km we confirm the fee on WhatsApp.`;
+  }
+
+  function nearestZone(lat, lng){
+    let best = null;
+    areasList.forEach(a => { const d = haversineKm(lat, lng, a.lat, a.lng); if(!best || d < best.d) best = {a, d}; });
+    return best;
+  }
+
+  async function init(){
+    await Promise.all([branchesReady, areasReady]);
+    buildQuotes(); fillSelect(); renderList(''); renderBands();
+    $('arSelect').addEventListener('change', e => showResult(areasList.find(a => a.id === e.target.value)));
+    $('arSearch').addEventListener('input', e => renderList(e.target.value));
+    $('arList').addEventListener('click', e => {
+      const b = e.target.closest('.ar-zone'); if(!b) return;
+      $('arSelect').value = b.dataset.id; showResult(areasList.find(a => a.id === b.dataset.id));
+      $('arResult').scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    $('arGeo').addEventListener('click', () => {
+      const box = $('arResult');
+      if(!navigator.geolocation){ box.innerHTML = '<div class="ar-note">Location is not available on this browser - choose your area from the list.</div>'; return; }
+      box.innerHTML = '<div class="ar-note">Finding you…</div>';
+      navigator.geolocation.getCurrentPosition(pos => {
+        const z = nearestZone(pos.coords.latitude, pos.coords.longitude);
+        if(z && z.d <= 6){ $('arSelect').value = z.a.id; showResult(z.a); }
+        else box.innerHTML = '<div class="ar-note">You look to be outside our current zones. WhatsApp us - we may still be able to deliver.</div>';
+      }, () => { box.innerHTML = '<div class="ar-note">Could not get your location - choose your area from the list.</div>'; }, {timeout:8000, maximumAge:300000});
+    });
+  }
+  init();
+})();

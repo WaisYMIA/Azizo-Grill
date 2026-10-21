@@ -2,7 +2,8 @@
 require_once __DIR__ . '/../config.php';
 
 /** DB row -> the exact shape app.js expects (same field names as products.json). */
-function serialize_product(array $row): array {
+/** $withCost = true only for admin endpoints: cost price is private and never goes on the public menu. */
+function serialize_product(array $row, bool $withCost = false): array {
     $out = [
         'id' => $row['id'],
         'cat' => $row['cat'],
@@ -16,6 +17,7 @@ function serialize_product(array $row): array {
     ];
     if (!empty($row['kind'])) $out['kind'] = $row['kind'];
     if (isset($row['in_stock'])) $out['inStock'] = (bool)$row['in_stock'];
+    if ($withCost) $out['costPrice'] = (int)($row['cost_price'] ?? 0);
     return $out;
 }
 

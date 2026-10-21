@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../lib/auth_guard.php';
 require_once __DIR__ . '/../../db.php';
 cors_and_preflight();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'PATCH') json_error('POST or PATCH required', 405);
-require_admin();
+require_staff();
 
 $id = $_GET['id'] ?? '';
 $body = read_json_body();
@@ -17,4 +17,5 @@ $result = $pdo->prepare('UPDATE orders SET status = ? WHERE id = ?');
 $result->execute([$status, $id]);
 if ($result->rowCount() === 0) json_error('Order not found', 404);
 
+$pdo->prepare('INSERT INTO order_status_log (order_id, status) VALUES (?, ?)')->execute([$id, $status]);
 json_response(['ok' => true]);

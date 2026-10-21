@@ -25,6 +25,10 @@ define('JWT_SECRET', getenv('JWT_SECRET') ?: 'dev-only-secret-change-me-before-l
 // passcodes in app.js) — used by /api/auth/admin-login.php and required by
 // every admin-only endpoint (product writes, order list, Excel import/export).
 define('ADMIN_PASSWORD', getenv('ADMIN_PASSWORD') ?: 'majani90');
+// Staff (counter/kitchen/dispatch) password for staff.html. Empty = staff login switched off.
+define('STAFF_PASSWORD', getenv('STAFF_PASSWORD') ?: '');
+// Hours ahead of UTC used for "today" in the staff totals (Nairobi = 3).
+define('TZ_OFFSET_HOURS', (int)(getenv('TZ_OFFSET_HOURS') !== false ? getenv('TZ_OFFSET_HOURS') : 3));
 
 // ---- Uploads ----
 // Where uploaded product photos are saved on disk, and the public URL path

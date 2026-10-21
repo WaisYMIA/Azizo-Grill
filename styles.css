@@ -1520,3 +1520,14 @@
 .vr-card{background:#fff;border:1px solid #e6dccb;border-radius:14px;padding:16px;}
 .vr-card .vr-meta{font-size:12px;color:#8a7a60;margin-top:8px;} .vr-card img{width:100%;border-radius:10px;margin-top:10px;max-height:220px;object-fit:cover;}
 .vr-reply{margin-top:10px;padding:8px 10px;background:#faf5ea;border-left:3px solid #c89b3c;font-size:13px;}
+
+/* v1.9 install + update bars */
+.pwa-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:9999;display:flex;align-items:center;gap:12px;max-width:560px;width:calc(100% - 24px);padding:12px 14px;background:#161210;color:#f3ece4;border:1px solid #c9a24a;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:.9rem}
+.pwa-bar img{border-radius:10px;flex:none}
+.pwa-t{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3}
+.pwa-t span{opacity:.8;font-size:.82rem}
+.pwa-go{background:#c9a24a;color:#161210;border:0;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer}
+.pwa-x{background:transparent;color:inherit;border:0;opacity:.7;cursor:pointer;padding:8px}
+.pwa-tools{text-align:center;font-size:.8rem;opacity:.75;padding:10px 0 4px}
+.pwa-tools a{color:inherit;text-decoration:underline}
+@media (min-width:900px){.pwa-bar{left:auto;right:20px;transform:none;bottom:20px}}
