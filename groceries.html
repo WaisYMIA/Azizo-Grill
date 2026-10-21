@@ -89,6 +89,8 @@
   <nav class="mobile-links" id="mobileLinks">
     <a href="fresh-market.html" data-page="fresh-market" data-i18n="nav.fresh">Fresh Market</a>
     <a href="meal-planner.html" data-page="meal-planner" data-i18n="nav.planner">Meal Plan</a>
+    <a href="budget.html" data-page="budget">Meat Budget</a>
+    <a href="areas.html" data-page="areas">Areas We Serve</a>
     <a href="ready-to-eat.html" data-page="ready-to-eat" data-i18n="nav.ready">Ready to Eat</a>
       <a href="groceries.html" data-page="groceries" data-i18n="nav.groceries">Groceries</a>
     <a href="outdoor-events.html" data-page="outdoor-events" data-i18n="nav.events">Outdoor Events</a>
@@ -139,6 +141,8 @@
           <li><a href="fresh-market.html#boxes">Curated Boxes</a></li>
           <li><a href="fresh-market.html">Fresh Meat Market</a></li>
           <li><a href="meal-planner.html">Meal Plan</a></li>
+          <li><a href="budget.html">Meat Budget Planner</a></li>
+          <li><a href="areas.html">Areas We Serve</a></li>
           <li><a href="ready-to-eat.html">Ready to Eat</a></li>
           <li><a href="groceries.html">Groceries</a></li>
           <li><a href="outdoor-events.html">Outdoor Events</a></li>
@@ -279,9 +283,6 @@
         <option value="Buruburu">Pickup branch: Buruburu</option>
         <option value="Utawala">Pickup branch: Utawala</option>
       </select>
-      <div class="mpesa-input-row" style="margin-top:10px;margin-bottom:16px;">
-        <input type="time" id="pickupTime" style="flex:1;border:none;background:transparent;padding:10px 12px;font-size:14px;font-family:'IBM Plex Mono',monospace;outline:none;">
-      </div>
     </div>
 
     <div id="deliveryBox" style="display:none;">
@@ -299,6 +300,21 @@
       <div class="stk-status" id="locateStatus"></div>
       <div class="delivery-fee-box" id="deliveryFeeDisplay"></div>
     </div>
+
+    <div class="pay-label">⏰ Preferred time</div>
+    <select class="branch-select" id="prefTime" style="margin-bottom:10px;">
+      <option>No preference</option>
+      <option>As soon as possible</option>
+      <option>Today, morning</option>
+      <option>Today, afternoon</option>
+      <option>Today, evening</option>
+      <option>Tomorrow, morning</option>
+      <option>Tomorrow, afternoon</option>
+      <option>Tomorrow, evening</option>
+      <option>Another day - I will confirm on WhatsApp</option>
+    </select>
+    <div class="pay-label">🔪 Instructions for the butcher <span style="font-weight:400;opacity:.7">(optional)</span></div>
+    <textarea class="branch-select" id="orderNotes" rows="2" maxlength="300" placeholder="e.g. cut the leg of lamb, mince the beef coarse, leave the fat on the ribs" style="margin-bottom:16px;resize:vertical;"></textarea>
 
     <div class="pay-label payment-heading">💰 Payment Method</div>
     <div class="pay-methods" id="payMethods">

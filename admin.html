@@ -14,7 +14,7 @@
   header{background:var(--maroon-deep);color:var(--cream);padding:20px 24px;}
   header h1{margin:0 0 4px;font-size:19px;}
   header p{margin:0;font-size:12.5px;color:#C9B8A9;line-height:1.6;max-width:720px;}
-  .wrap{max-width:980px;margin:0 auto;padding:24px;}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px;}
   .gate{max-width:400px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:28px;text-align:center;}
   .gate input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:4px;font-size:14px;margin:8px 0;}
   .gate label{display:block;font-size:11.5px;color:var(--ink-soft);text-align:left;font-weight:600;margin-top:12px;}
@@ -78,7 +78,8 @@
   .status-line{font-size:12.5px;color:var(--ink-soft);margin-top:10px;}
 
   /* ---------- TOP-LEVEL TABS (Products / Orders) ---------- */
-  .admin-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--line);}
+  .admin-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--line);overflow-x:auto;white-space:nowrap;}
+  @media(max-width:560px){.admin-tab{padding:10px 12px;}}
   .admin-tab{
     background:none;border:none;padding:10px 18px;font-size:13.5px;font-weight:700;
     color:var(--ink-soft);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;
@@ -137,6 +138,61 @@
   .check-field input{width:auto;accent-color:var(--gold);}
   .pin-link{font-size:12px;margin:-6px 0 12px;display:block;}
   @media(max-width:560px){ .b-left{flex-basis:100%;} .branch-row-admin .item-actions{width:100%;} }
+
+  /* ---------- REPORTS TAB ---------- */
+  .rp-bar{padding:14px 16px;}
+  .rp-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .rp-presets button,.rp-subtabs button{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:18px;padding:6px 13px;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .rp-presets button.on,.rp-subtabs button.on{background:var(--maroon);color:var(--cream);border-color:var(--maroon);}
+  .rp-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .rp-controls label,.rp-acct-opts label,.rp-exp label{font-size:11.5px;font-weight:600;color:var(--ink-soft);display:flex;flex-direction:column;gap:4px;}
+  .rp-controls input,.rp-controls select,.rp-acct-opts input,.rp-acct-opts select,.rp-exp input,.rp-exp select{padding:7px 9px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-family:inherit;}
+  .rp-subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;}
+  .rp-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px;}
+  .rp-tile{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+  .rp-tile.neg{border-color:#E3B4B4;background:#FFF8F7;}
+  .rp-tl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);}
+  .rp-tv{font-size:21px;font-weight:800;margin:4px 0 2px;font-family:Georgia,serif;word-break:break-word;}
+  .rp-tf{font-size:11.5px;color:var(--ink-soft);}
+  .rp-d.up{color:var(--green);font-weight:700;}.rp-d.down{color:var(--red);font-weight:700;}.rp-d.flat{color:var(--ink-soft);}
+  .rp-sec h3{margin:0;}.rp-sechead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .rp-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:860px){.rp-two{grid-template-columns:1fr;}}
+  .rp-ins{list-style:none;margin:0;padding:0;}
+  .rp-ins li{padding:9px 12px 9px 14px;border-left:4px solid var(--line);background:#FBF8F2;margin-bottom:6px;border-radius:0 4px 4px 0;font-size:13px;line-height:1.5;}
+  .rp-ins li.good{border-left-color:var(--green);}.rp-ins li.warn{border-left-color:#D08A1E;}.rp-ins li.info{border-left-color:var(--gold);}
+  .rp-svg{width:100%;height:auto;display:block;}
+  .rp-hit{cursor:pointer;}.rp-hit:hover{fill:rgba(200,155,60,.12);}
+  .rp-tip{display:none;position:absolute;z-index:80;background:var(--maroon-deep);color:#fff;font-size:12px;padding:6px 9px;border-radius:4px;max-width:260px;pointer-events:none;}
+  .rp-hrow{display:grid;grid-template-columns:minmax(80px,170px) 1fr minmax(110px,auto);gap:10px;align-items:center;margin-bottom:8px;font-size:12.5px;}
+  .rp-hl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+  .rp-htrack{background:#F0E9DC;border-radius:3px;height:12px;}.rp-hfill{height:12px;border-radius:3px;}
+  .rp-hv{text-align:right;font-family:monospace;}.rp-hv small{display:block;color:var(--ink-soft);font-family:inherit;font-size:11px;}
+  @media(max-width:560px){.rp-hrow{grid-template-columns:1fr auto;}.rp-htrack{grid-column:1/-1;order:3;}}
+  .rp-tw{overflow-x:auto;}.rp-t{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .rp-t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);border-bottom:2px solid var(--line);padding:6px 8px;white-space:nowrap;cursor:pointer;}
+  .rp-t td{padding:7px 8px;border-bottom:1px solid #F0E9DC;vertical-align:top;}
+  .rp-t .n{text-align:right;font-family:monospace;white-space:nowrap;}.rp-t th.n{text-align:right;}
+  .rp-t small{color:var(--ink-soft);font-family:inherit;}
+  .rp-tbtn{margin-top:6px;text-align:right;}
+  .rp-link{background:none;border:none;color:var(--gold-dark,#8F6A1F);font-size:12px;font-weight:700;cursor:pointer;padding:2px 4px;text-decoration:underline;}
+  .rp-na{color:var(--ink-soft);font-style:italic;}.rp-bad{color:var(--red);font-weight:700;}.rp-good{color:var(--green);font-weight:700;}
+  .rp-abc{display:inline-block;min-width:22px;text-align:center;border-radius:4px;font-weight:800;font-size:11px;padding:2px 6px;}
+  .rp-abc.A{background:var(--gold);color:var(--maroon-deep);}.rp-abc.B{background:#E4C88A;color:#5A4019;}.rp-abc.C{background:#EEE7DA;color:var(--ink-soft);}
+  .rp-h4{margin:14px 0 6px;font-size:12.5px;}.rp-list{margin:0 0 6px;padding-left:18px;font-size:12.5px;line-height:1.7;}
+  .rp-pl{width:100%;max-width:640px;border-collapse:collapse;font-size:13.5px;}
+  .rp-pl td{padding:7px 4px;border-bottom:1px solid #F0E9DC;vertical-align:top;}.rp-pl td.n{text-align:right;font-family:monospace;white-space:nowrap;}
+  .rp-pl td small{display:block;color:var(--ink-soft);font-size:11px;font-family:inherit;white-space:normal;}
+  .rp-pl tr.tot td{border-top:2px solid var(--ink);background:#FBF8F2;}
+  .rp-acct-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:14px 0 4px;font-size:13px;}
+  .rp-exp{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end;}
+  .rp-exp .wide{grid-column:span 2;}.rp-exp .excel-btn{height:36px;}
+  @media print{
+    body{background:#fff;}header,.admin-tabs,.rp-bar,.rp-subtabs,.rp-tbtn,.rp-del,.rp-exp,.logout-btn,#productsTab,#ordersTab,#branchesTab,#areasTab,#reviewsTab{display:none !important;}
+    #reportsTab{display:block !important;}.wrap{max-width:none;padding:0;}.panel,.rp-tile{break-inside:avoid;}
+    body::before{content:attr(data-print-title);display:block;font-weight:800;font-size:15px;margin-bottom:10px;}
+    .rp-tw{overflow:visible;}
+  }
 </style>
 </head>
 <body>
@@ -169,6 +225,9 @@
       <button class="admin-tab active" id="tabBtnProducts" onclick="switchAdminTab('products')">Products</button>
       <button class="admin-tab" id="tabBtnOrders" onclick="switchAdminTab('orders')">Orders</button>
       <button class="admin-tab" id="tabBtnBranches" onclick="switchAdminTab('branches')">Branches</button>
+      <button class="admin-tab" id="tabBtnAreas" onclick="switchAdminTab('areas')">Areas</button>
+      <button class="admin-tab" id="tabBtnReviews" onclick="switchAdminTab('reviews')">Reviews</button>
+      <button class="admin-tab" id="tabBtnReports" onclick="switchAdminTab('reports')">Reports</button>
     </div>
 
     <div id="productsTab">
@@ -224,10 +283,14 @@
       </div>
     </div>
 
+    <div id="reportsTab" style="display:none;"></div>
+    <div id="areasTab" style="display:none;"></div>
+    <div id="reviewsTab" style="display:none;"></div>
+
     <div id="branchesTab" style="display:none;">
       <div class="panel">
         <h3>Branches</h3>
-        <p class="hint">Tick <strong>Show on website</strong> to list a branch for customers (branch strip, Find Us map, footer and the pickup / delivery pickers at checkout); untick to hide it without deleting anything. Use <strong>Edit</strong> to change a branch's address, map pin, hours and its own phone number. Every branch takes orders on the <strong>same WhatsApp number</strong> — a branch's phone is only the number customers call for that branch. Delivery fees are measured from each branch's map pin, so check the pins before listing a new branch.</p>
+        <p class="hint">Tick <strong>Show on website</strong> to list a branch for customers (branch strip, Find Us map, footer and the pickup / delivery pickers at checkout); untick to hide it without deleting anything. Use <strong>Edit</strong> to change a branch's address, map pin, hours and its own phone number. Every branch takes orders on the <strong>same WhatsApp number</strong> — a branch's phone is only the number customers call for that branch. Delivery fees are measured from each branch's map pin, so check the pins before listing a new branch. <strong>Hiding a branch (for example while it is closed) also re-routes delivery zones, quotes and the nearest-branch suggestions to the next nearest live branch</strong> - see the Areas tab.</p>
         <div class="toolbar"><button class="add-btn" style="margin-top:0;" onclick="openBranchModal()">+ Add Branch</button></div>
         <div id="branchesList"></div>
         <div class="status-line" id="branchesStatusLine"></div>
@@ -248,6 +311,7 @@
       </div>
       <div class="field">
         <label>Photo (JPG/PNG/WEBP/GIF, up to 5MB)</label>
+        <p class="hint" style="margin:2px 0 6px;">Best results: a landscape photo (4:3, for example 1200 × 900 px) with the product in the centre. Photos fill the whole card, so anything near the edges may be trimmed.</p>
         <input type="file" id="f_image" accept="image/jpeg,image/png,image/webp,image/gif">
       </div>
       <div class="field-row">
@@ -291,6 +355,10 @@
           <label>Unit (kg / bird / plate / wrap...)</label>
           <input type="text" id="f_unit" required>
         </div>
+      </div>
+      <div class="field">
+        <label>Cost price per unit (KSh, private — used only for profit reports)</label>
+        <input type="number" id="f_cost" min="0" step="1" placeholder="What one kg / bird / plate costs you">
       </div>
       <div class="field">
         <label>Badges (comma-separated, optional)</label>
@@ -397,10 +465,18 @@
     const statusLine = document.getElementById('statusLine');
     statusLine.textContent = 'Loading catalog…';
     try{
-      const res = await fetch(api('/api/products'), {headers: authHeaders(), cache: 'no-store'});
+      // Admin list includes private cost prices; older/PHP backends without it fall back to the public menu.
+      let res = await fetch(api('/api/products/admin/list'), {headers: authHeaders(), cache: 'no-store'});
       if(res.status === 401 || res.status === 403){ doLogout(); return; }
-      if(!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = await res.json();
+      let data;
+      if(res.ok){
+        const all = (await res.json()).products || [];
+        data = {freshItems: all.filter(p => p.category_group === 'fresh'), readyItems: all.filter(p => p.category_group === 'ready'), groceryItems: all.filter(p => p.category_group === 'groceries')};
+      } else {
+        res = await fetch(api('/api/products'), {headers: authHeaders(), cache: 'no-store'});
+        if(!res.ok) throw new Error(`Server returned ${res.status}`);
+        data = await res.json();
+      }
       freshItems = data.freshItems || [];
       readyItems = data.readyItems || [];
       groceryItems = data.groceryItems || [];
@@ -421,7 +497,7 @@
           <img class="thumb" src="${resolveImg(item.img)}" onerror="this.style.visibility='hidden'" alt="">
           <div class="info">
             <div class="name">${escapeHtml(item.name)}</div>
-            <div class="meta">${escapeHtml(item.id)} · ${escapeHtml(item.cat)}${item.kind ? ' · ' + escapeHtml(item.kind) : ''} · KSh ${item.price}/${escapeHtml(item.unit)}</div>
+            <div class="meta">${escapeHtml(item.id)} · ${escapeHtml(item.cat)}${item.kind ? ' · ' + escapeHtml(item.kind) : ''} · KSh ${item.price}/${escapeHtml(item.unit)}${item.costPrice ? ` · cost ${item.costPrice} (${Math.round((item.price - item.costPrice) / item.price * 100)}% margin)` : ' · <em>no cost price</em>'}</div>
           </div>
         </div>
         <div class="item-actions">
@@ -455,6 +531,7 @@
       document.getElementById('f_unit').value = item.unit || '';
       document.getElementById('f_badges').value = (item.badges || []).join(', ');
       document.getElementById('f_origin').value = item.origin || '';
+      document.getElementById('f_cost').value = item.costPrice || '';
       if(item.img){
         document.getElementById('currentPhotoImg').src = resolveImg(item.img);
         currentRow.style.display = 'flex';
@@ -488,6 +565,7 @@
       fd.append('unit', document.getElementById('f_unit').value.trim());
       fd.append('badges', document.getElementById('f_badges').value);
       fd.append('origin', document.getElementById('f_origin').value.trim());
+      fd.append('cost_price', document.getElementById('f_cost').value || '0');
       const fileInput = document.getElementById('f_image');
       if(fileInput.files[0]) fd.append('image', fileInput.files[0]);
 
@@ -573,13 +651,16 @@
   let ordersLoadedOnce = false;
   let branchesLoadedOnce = false;
   function switchAdminTab(tab){
-    const tabs = {products: 'productsTab', orders: 'ordersTab', branches: 'branchesTab'};
-    const btns = {products: 'tabBtnProducts', orders: 'tabBtnOrders', branches: 'tabBtnBranches'};
+    const tabs = {products: 'productsTab', orders: 'ordersTab', branches: 'branchesTab', areas: 'areasTab', reviews: 'reviewsTab', reports: 'reportsTab'};
+    const btns = {products: 'tabBtnProducts', orders: 'tabBtnOrders', branches: 'tabBtnBranches', areas: 'tabBtnAreas', reviews: 'tabBtnReviews', reports: 'tabBtnReports'};
     Object.keys(tabs).forEach(k => {
       document.getElementById(tabs[k]).style.display = k === tab ? 'block' : 'none';
       document.getElementById(btns[k]).classList.toggle('active', k === tab);
     });
     if(tab === 'orders' && !ordersLoadedOnce){ ordersLoadedOnce = true; loadOrders(); }
+    if(tab === 'reports' && window.AzizoReports){ window.AzizoReports.open(); }
+    if(tab === 'reviews' && window.AzizoReviews){ window.AzizoReviews.open(); }
+    if(tab === 'areas' && window.AzizoAreas){ window.AzizoAreas.open(); }
     if(tab === 'branches' && !branchesLoadedOnce){ branchesLoadedOnce = true; loadBranchesAdmin(); }
   }
 
@@ -851,5 +932,8 @@
     }
   })();
 </script>
+<script src="admin-reports.js"></script>
+<script src="admin-areas.js"></script>
+<script src="admin-reviews.js"></script>
 </body>
 </html>

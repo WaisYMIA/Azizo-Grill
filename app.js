@@ -37,7 +37,13 @@
     // live product catalog, accounts, and order history all quietly fall back to
     // products.json / local-only behavior, and WhatsApp checkout keeps working exactly
     // as before. Nothing breaks either way.
-    API_BASE_URL: "",
+    //
+    // THIS COPY IS PRE-SET FOR LOCAL/OFFLINE PHONE TESTING (see azizo-phone-test-guide.md):
+    // server.js in backend/ serves this very site/ folder plus the API from one process
+    // on your phone, so "http://localhost:3000" always means "this same phone" — no
+    // domain, no internet, no fixed IP needed. Change this back to "" (or your real
+    // domain) before you deploy to cPanel; this value will NOT work on a real server.
+    API_BASE_URL: "http://localhost:3000",
 
     // ---- Staff / Admin access (two-tier — see the "Staff & Admin Access" section of
     // the deployment guide for the full explanation) ----
@@ -327,6 +333,8 @@
   }
 
   function openStaffPanel(){
+    // With a backend, staff use the full staff screen (orders, stock, totals, promo codes).
+    if(apiAvailable()){ try{ if(localStorage.getItem('azizoAdminBackendUrl') === null) localStorage.setItem('azizoAdminBackendUrl', apiBase()); }catch(e){} location.href = 'staff.html'; return; }
     const entered = prompt('Staff or Admin passcode:');
     if(entered === null) return;
 
@@ -399,6 +407,7 @@
     {id:'utawala', name:'Utawala', area:'Utawala', address:'Utawala, Nairobi', query:'Azizo Butchery and Grill, Utawala, Nairobi, Kenya', lat:-1.2870, lng:36.9600, phone:'', hours:'Open 24 hours', isMain:false, listed:true},
   ];
   let branches = DEFAULT_BRANCHES.slice();
+  let branchesReadyResolve; const branchesReady = new Promise(r => { branchesReadyResolve = r; });
   let activeBranchId = 'syokimau';
 
   function escB(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -491,6 +500,8 @@
       updateDeliveryFeeDisplay();
       injectDynamicSEO();
     }
+    refreshBranchSuggestions();
+    branchesReadyResolve();
   }
 
   // ---------- DATA ----------
@@ -499,41 +510,41 @@
   // products.json can't be fetched (e.g. opening this file directly as file:// instead of
   // through a real web server — browsers block local fetches like that for security).
   let freshItems = [
-    {id:'f1', cat:'Beef', kind:'red', name:'Beef Rump', desc:'Lean, tender cut ideal for grilling or roasting. Cut to your preferred thickness.', price:650, unit:'kg', img:''},
-    {id:'f2', cat:'Beef', kind:'red', name:'Beef Ribeye', desc:'Well-marbled steak cut, perfect for the grill.', price:850, unit:'kg', img:''},
-    {id:'f3', cat:'Beef', kind:'red', name:'Beef Mince', desc:'Freshly ground beef, great for stews and burgers.', price:600, unit:'kg', img:''},
-    {id:'f4', cat:'Pork', kind:'red', name:'Pork Chops', desc:'Bone-in chops, trimmed and ready to marinate.', price:700, unit:'kg', img:''},
-    {id:'f5', cat:'Pork', kind:'red', name:'Pork Ribs', desc:'Full rack, ideal for slow grilling.', price:750, unit:'kg', img:''},
-    {id:'f6', cat:'Chicken', kind:'white', name:'Whole Chicken', desc:'Farm-fresh, cleaned and ready to cook.', price:550, unit:'bird', img:''},
-    {id:'f7', cat:'Chicken', kind:'white', name:'Chicken Breast', desc:'Skinless, boneless fillets.', price:520, unit:'kg', img:''},
-    {id:'f8', cat:'Fish', kind:'white', name:'Tilapia (Whole)', desc:'Fresh whole tilapia, scaled and gutted on request.', price:450, unit:'kg', img:''},
-    {id:'f9', cat:'Fish', kind:'white', name:'Nile Perch Fillet', desc:'Boneless fillet, ready for the pan or grill.', price:700, unit:'kg', img:''},
+    {id:'f1', cat:'Beef', kind:'red', name:'Beef Rump', desc:'Lean, tender cut with good beef flavour. Great for nyama choma, grilled steaks or a quick mchuzi. Tell us the thickness you want.', price:650, unit:'kg', img:''},
+    {id:'f2', cat:'Beef', kind:'red', name:'Beef Ribeye', desc:'Well-marbled steak that stays rich and juicy. Sear on a hot pan or charcoal, then rest it a few minutes before slicing.', price:850, unit:'kg', img:''},
+    {id:'f3', cat:'Beef', kind:'red', name:'Beef Mince', desc:'Freshly minced beef for stews, burgers, samosas and meatballs. Cooks quickly and takes up spices well.', price:600, unit:'kg', img:''},
+    {id:'f4', cat:'Pork', kind:'red', name:'Pork Chops', desc:'Bone-in chops, trimmed and ready to marinate. Lovely fried, grilled or baked with garlic and herbs.', price:700, unit:'kg', img:''},
+    {id:'f5', cat:'Pork', kind:'red', name:'Pork Ribs', desc:'Meaty rack for slow grilling or baking. Marinate overnight, then cook low and slow until the meat comes off the bone.', price:750, unit:'kg', img:''},
+    {id:'f6', cat:'Chicken', kind:'white', name:'Whole Chicken', desc:'Whole broiler, cleaned and ready to cook. The everyday choice for roasting, frying or a family kuku mchuzi.', price:550, unit:'bird', img:''},
+    {id:'f7', cat:'Chicken', kind:'white', name:'Chicken Breast', desc:'Skinless, boneless fillets. Lean and quick to cook — good for grilling, stir-fry or slicing into sandwiches.', price:520, unit:'kg', img:''},
+    {id:'f8', cat:'Fish', kind:'white', name:'Tilapia (Whole)', desc:'Fresh whole tilapia, scaled and gutted on request. Fry it crisp or grill with lemon, and serve with ugali and kachumbari.', price:450, unit:'kg', img:''},
+    {id:'f9', cat:'Fish', kind:'white', name:'Nile Perch Fillet', desc:'Boneless white fillet with a mild taste. Pan-fry, grill or simmer in coconut sauce — no bones to worry about.', price:700, unit:'kg', img:''},
   ];
 
   let readyItems = [
-    {id:'r1', cat:'Grilled', name:'Nyama Choma (Beef)', desc:'Charcoal-grilled beef, served with kachumbari on request.', price:700, unit:'kg', img:''},
-    {id:'r2', cat:'Grilled', name:'Grilled Chicken', desc:'Half or whole, marinated and grilled to order.', price:600, unit:'half', img:''},
-    {id:'r3', cat:'Fried', name:'Fried Chicken', desc:'Crispy fried chicken pieces, made fresh to order.', price:550, unit:'plate', img:''},
-    {id:'r4', cat:'Fried', name:'Fried Fish', desc:'Deep-fried tilapia, whole or filleted.', price:500, unit:'plate', img:''},
-    {id:'r5', cat:'Shawarma', name:'Beef Shawarma', desc:'Wrapped shawarma with beef, salad and house sauce.', price:350, unit:'wrap', img:''},
-    {id:'r6', cat:'Shawarma', name:'Chicken Shawarma', desc:'Wrapped shawarma with chicken, salad and house sauce.', price:320, unit:'wrap', img:''},
+    {id:'r1', cat:'Grilled', name:'Nyama Choma (Beef)', desc:'Charcoal-grilled beef, chopped and served hot. Add kachumbari and ugali for the full nyama choma plate.', price:700, unit:'kg', img:''},
+    {id:'r2', cat:'Grilled', name:'Grilled Chicken', desc:'Half or whole chicken, marinated and grilled over charcoal to order. Smoky, juicy and served hot.', price:600, unit:'half', img:''},
+    {id:'r3', cat:'Fried', name:'Fried Chicken', desc:'Crispy fried chicken pieces, made fresh to order. Best with chips and kachumbari.', price:550, unit:'plate', img:''},
+    {id:'r4', cat:'Fried', name:'Fried Fish', desc:'Whole or filleted tilapia, deep-fried until crisp. Served with ugali, kachumbari and lemon.', price:500, unit:'plate', img:''},
+    {id:'r5', cat:'Shawarma', name:'Beef Shawarma', desc:'Tender beef, fresh salad and house sauce in a warm wrap. A filling meal you can eat on the go.', price:350, unit:'wrap', img:''},
+    {id:'r6', cat:'Shawarma', name:'Chicken Shawarma', desc:'Tender chicken, fresh salad and house sauce in a warm wrap. A filling meal you can eat on the go.', price:320, unit:'wrap', img:''},
   ];
 
   // Groceries — common meat-prep accompaniments (tomatoes, garlic, etc.), kept as a
   // fully separate section from the meat/ready-to-eat menu. Same fallback-array pattern
   // as freshItems/readyItems above; the real source of truth is products.json / the backend.
   let groceryItems = [
-    {id:'g1', cat:'Vegetables', name:'Tomatoes', desc:'Fresh tomatoes — kachumbari and stew base.', price:120, unit:'kg', img:''},
-    {id:'g2', cat:'Vegetables', name:'Onions', desc:'Red onions, essential for any meat dish.', price:100, unit:'kg', img:''},
-    {id:'g3', cat:'Vegetables', name:'Dhania (Coriander)', desc:'Fresh coriander, sold by the bunch.', price:30, unit:'bunch', img:''},
-    {id:'g4', cat:'Vegetables', name:'Pilipili (Chili)', desc:'Fresh green or red chili, for kachumbari or marinades.', price:50, unit:'250g', img:''},
-    {id:'g5', cat:'Vegetables', name:'Lemon', desc:'Fresh lemons — great on grilled fish or chicken.', price:15, unit:'piece', img:''},
-    {id:'g6', cat:'Vegetables', name:'Potatoes', desc:'Fresh potatoes — chips or a stew side.', price:90, unit:'kg', img:''},
-    {id:'g7', cat:'Vegetables', name:'Kachumbari Mix', desc:'Pre-chopped tomato, onion and coriander — ready to serve.', price:150, unit:'pack', img:''},
-    {id:'g8', cat:'Spices', name:'Garlic', desc:'Fresh garlic bulbs.', price:200, unit:'250g', img:''},
-    {id:'g9', cat:'Spices', name:'Ginger', desc:'Fresh ginger root.', price:150, unit:'250g', img:''},
-    {id:'g10', cat:'Spices', name:'Royco / Meat Masala', desc:'All-purpose seasoning for stews and grills.', price:80, unit:'packet', img:''},
-    {id:'g11', cat:'Spices', name:'Cooking Oil', desc:'Vegetable cooking oil, 1 litre.', price:280, unit:'litre', img:''},
+    {id:'g1', cat:'Vegetables', name:'Tomatoes', desc:'Fresh, ripe tomatoes for kachumbari and the base of any mchuzi.', price:120, unit:'kg', img:''},
+    {id:'g2', cat:'Vegetables', name:'Onions', desc:'Red onions — the starting point of almost every Kenyan stew and fry.', price:100, unit:'kg', img:''},
+    {id:'g3', cat:'Vegetables', name:'Dhania (Coriander)', desc:'Fresh dhania, sold by the bunch. Add near the end of cooking for aroma and colour.', price:30, unit:'bunch', img:''},
+    {id:'g4', cat:'Vegetables', name:'Pilipili (Chili)', desc:'Fresh pilipili, green or red. Use sparingly in kachumbari, marinades and sauces.', price:50, unit:'250g', img:''},
+    {id:'g5', cat:'Vegetables', name:'Lemon', desc:'Fresh lemons. Squeeze over grilled fish or chicken, or into a marinade.', price:15, unit:'piece', img:''},
+    {id:'g6', cat:'Vegetables', name:'Potatoes', desc:'Fresh potatoes for chips, mashed potato or to give a stew more body.', price:90, unit:'kg', img:''},
+    {id:'g7', cat:'Vegetables', name:'Kachumbari Mix', desc:'Pre-chopped tomato, onion and dhania, ready to serve with nyama choma, chips or ugali.', price:150, unit:'pack', img:''},
+    {id:'g8', cat:'Spices', name:'Garlic', desc:'Fresh garlic bulbs for marinades, stews and soups.', price:200, unit:'250g', img:''},
+    {id:'g9', cat:'Spices', name:'Ginger', desc:'Fresh ginger root. Good in tea, marinades and broths.', price:150, unit:'250g', img:''},
+    {id:'g10', cat:'Spices', name:'Royco / Meat Masala', desc:'All-purpose seasoning for stews, grills and fried meat. A little goes a long way.', price:80, unit:'packet', img:''},
+    {id:'g11', cat:'Spices', name:'Cooking Oil', desc:'Vegetable cooking oil, 1 litre. For frying, sautéing and deep-frying.', price:280, unit:'litre', img:''},
     {id:'g12', cat:'Spices', name:'Salt', desc:'Table salt, 1kg packet.', price:50, unit:'packet', img:''},
   ];
 
@@ -739,7 +750,7 @@
   function cardHTML(i, source){
     const qty = cart[i.id] ? cart[i.id].qty : 0;
     const photoHTML = i.img
-      ? `<img src="${resolveImgSrc(i.img)}" alt="${i.name}" class="tag-photo" onerror="this.parentElement.classList.add('no-photo'); this.remove();">`
+      ? `<img src="${resolveImgSrc(i.img)}" alt="${i.name}" class="tag-photo" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('no-photo'); this.remove();">`
       : '';
     const fav = isFavorite(i.id);
     const pairing = crossSellFor(i, source);
@@ -751,8 +762,9 @@
     const badges = (i.badges && i.badges.length) ? i.badges : (i.kind ? ['Cut Fresh Daily'] : ['Prepared Fresh to Order']);
     const badgesHTML = badges.map(b=>`<span class="sourcing-badge">${b}</span>`).join('');
     const originHTML = i.origin ? `<div class="origin-note">📍 ${i.origin}</div>` : '';
+    const hasMore = String(i.desc || '').length > 80 || !!pairing || !!i.origin;
     return `
-    <div class="tag-card ${qty>0?'in-cart':''} ${i.img?'':'no-photo'}" id="card-${i.id}">
+    <div class="tag-card ${qty>0?'in-cart':''} ${i.img?'':'no-photo'} ${i.inStock===false?'is-sold-out':''}" id="card-${i.id}">
       ${photoHTML}
       <button class="fav-btn ${fav?'active':''}" title="${fav?'Remove from favorites':'Save to favorites'}" aria-label="${fav?'Remove '+i.name+' from favorites':'Save '+i.name+' to favorites'}" onclick="toggleFavorite('${i.id}')">${fav?'♥':'♡'}</button>
       <div class="tag-top">
@@ -760,18 +772,23 @@
       </div>
       <h3>${i.name}</h3>
       <div class="badges-row">${badgesHTML}</div>
-      <p class="tag-desc">${i.desc}${originHTML}${pairing ? `<br><span class="pairing">Pairs well with: ${pairing}</span>` : ''}</p>
+      <div class="tag-desc-wrap">
+        <p class="tag-desc" id="desc-${i.id}">${i.desc}</p>
+        ${hasMore ? `<div class="tag-more" id="more-${i.id}">${originHTML}${pairing ? `<span class="pairing">Pairs well with: ${pairing}</span>` : ''}</div>
+        <button type="button" class="read-more" id="rm-${i.id}" aria-expanded="false" aria-controls="desc-${i.id}" onclick="toggleExpand('${i.id}')"><span class="rm-label">Read more</span><span class="rm-chev" aria-hidden="true">▾</span></button>` : ''}
+      </div>
       <div class="tag-bottom">
         <span class="price">KSh ${i.price}<sup>/${i.unit}</sup></span>
         <div class="tag-actions">
-          <button class="icon-btn" title="More details" aria-label="More details about ${i.name}" onclick="toggleExpand('${i.id}')">i</button>
           ${qty > 0
             ? `<div class="card-stepper">
                  <button onclick="setCardQty('${i.id}','${source}',${qty}-1)">−</button>
                  <span>${qty}</span>
                  <button onclick="setCardQty('${i.id}','${source}',${qty}+1)">+</button>
                </div>`
-            : `<button class="add-btn" id="add-${i.id}" onclick="addToCart('${i.id}','${source}')">Add</button>`
+            : (i.inStock === false
+                ? `<button class="add-btn sold-out" id="add-${i.id}" disabled aria-label="${i.name} is sold out">Sold out</button>`
+                : `<button class="add-btn" id="add-${i.id}" onclick="addToCart('${i.id}','${source}')">Add</button>`)
           }
         </div>
       </div>
@@ -779,7 +796,14 @@
   }
 
   function toggleExpand(id){
-    document.getElementById(`card-${id}`).classList.toggle('expanded');
+    const card = document.getElementById(`card-${id}`);
+    if(!card) return;
+    const open = card.classList.toggle('expanded');
+    const btn = document.getElementById(`rm-${id}`);
+    if(btn){
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.querySelector('.rm-label').textContent = open ? 'Show less' : 'Read more';
+    }
   }
 
   function findItem(id){
@@ -905,6 +929,7 @@
     renderFresh(window.currentFreshKind || 'all', window.currentFreshCat || 'all');
     renderReady(window.currentReadyCat || 'all');
     renderGroceries(window.currentGroceryCat || 'all');
+    renderUsualShelf();
   }
 
   function setCardQty(id, source, qty){
@@ -921,6 +946,7 @@
 
   function addToCart(id, source){
     const item = findItem(id);
+    if(item && item.inStock === false){ showToast(`${item.name} is sold out right now`); return; }
     const newQty = (cart[id] ? cart[id].qty : 0) + 1;
     cart[id] = {item, qty:newQty, source};
     updateCartUI();
@@ -947,6 +973,7 @@
 
   function updateCartUI(){
     saveCartToStorage();
+    refreshStockNote();
     const ids = Object.keys(cart);
     const count = ids.reduce((sum,id)=>sum+cart[id].qty,0);
     const countEl = document.getElementById('cartCount');
@@ -960,6 +987,7 @@
       const last = getLastOrder();
       body.innerHTML = `<div class="empty-cart">Your cart is empty.<br>Add items from Fresh Market or Ready to Eat.
         ${last && last.length ? `<button class="reorder-btn" onclick="reorderLastOrder()">↻ Reorder Last Order</button>` : ''}
+        ${usualChipsHTML() ? `<div class="usual-cart"><div class="usual-head"><strong>Your usual</strong></div>${usualChipsHTML()}</div>` : ''}
       </div>`;
     } else {
       body.innerHTML = ids.map(id=>{
@@ -977,7 +1005,7 @@
           </div>
           <div class="ci-price">KSh ${item.price*qty}</div>
         </div>`;
-      }).join('');
+      }).join('') + (function(){ const h = usualChipsHTML(ids); return h ? `<div class="usual-cart"><div class="usual-head"><strong>Your usual</strong> <span>add more</span></div>${h}</div>` : ''; })();
     }
 
     const itemsTotal = getItemsSubtotal();
@@ -1031,18 +1059,303 @@
     document.getElementById('pickupBox').style.display = method==='pickup' ? 'block' : 'none';
     document.getElementById('deliveryBox').style.display = method==='delivery' ? 'block' : 'none';
     updateDeliveryFeeDisplay();
+    refreshBranchSuggestions();
   }
 
   function getItemsSubtotal(){
     return Object.keys(cart).reduce((sum,id)=>sum+cart[id].item.price*cart[id].qty,0);
   }
 
+
+
+  // ---------- REPEAT CUSTOMERS: remembered details + "Your usual" (v1.8, this device only) ----------
+  const CUSTOMER_KEY = 'azizoCustomer', HABITS_KEY = 'azizoHabits';
+  function loadJSON(k, d){ try{ const v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; }catch(e){ return d; } }
+  function saveJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function rememberCustomer(order){
+    const d = order.deliveryInfo || {};
+    saveJSON(CUSTOMER_KEY, {
+      name: order.clientName || '', phone: String(order.clientPhone || '').replace(/\D/g, '').slice(-9),
+      method: d.method === 'Home Delivery' ? 'delivery' : 'pickup',
+      address: d.address || '', area: areaLocation ? areaLocation.id : ''
+    });
+    if(areaLocation){ try{ localStorage.setItem('azizoArea', areaLocation.id); }catch(e){} }
+    const h = loadJSON(HABITS_KEY, {});
+    Object.keys(cart).forEach(k => {
+      if(k.indexOf('::') !== -1) return; // plan lines are not single products
+      const e = h[k] || {c: 0, q: 1};
+      h[k] = {c: e.c + 1, q: cart[k].qty, t: Date.now()};
+    });
+    saveJSON(HABITS_KEY, h);
+  }
+  function prefillCustomer(){
+    const c = loadJSON(CUSTOMER_KEY, null); if(!c) return;
+    const set = (id, v) => { const el = document.getElementById(id); if(el && !el.value && v) el.value = v; };
+    set('clientName', c.name); set('clientPhone', c.phone); set('deliveryAddress', c.address);
+    if(c.method === 'delivery' && selectedDeliveryMethod !== 'delivery') selectDeliveryMethod('delivery');
+  }
+  function usualItems(skipIds){
+    const h = loadJSON(HABITS_KEY, {}), skip = new Set(skipIds || []);
+    return Object.keys(h).map(id => ({id, h: h[id], item: findItem(id)}))
+      .filter(x => x.item && x.item.inStock !== false && !skip.has(x.id))
+      .sort((a, b) => b.h.c - a.h.c || b.h.t - a.h.t).slice(0, 6);
+  }
+  function usualChipsHTML(skipIds){
+    const u = usualItems(skipIds);
+    if(!u.length) return '';
+    return `<div class="usual-chips">${u.map(x => `<button type="button" class="usual-chip" onclick="addUsual('${escB(x.id)}')"><span>${escB(x.item.name)}</span><small>KSh ${x.item.price}/${escB(x.item.unit)} · + Add</small></button>`).join('')}</div>`;
+  }
+  function addUsual(id){
+    const h = loadJSON(HABITS_KEY, {});
+    addToCart(id, 'usual');
+    const e = h[id]; if(e && e.q > 1 && cart[id] && cart[id].qty < e.q){ cart[id].qty = e.q; updateCartUI(); }
+  }
+  // Strip near the top of the home and Fresh Market pages (only for returning customers).
+  function renderUsualShelf(){
+    let el = document.getElementById('usualShelf');
+    const html = usualChipsHTML();
+    if(!html){ if(el) el.remove(); return; }
+    if(!el){
+      const anchor = document.getElementById('boxes') || (document.querySelector('.hero') ? document.querySelector('.hero').nextElementSibling : null);
+      if(!anchor || !/^(index|fresh-market)$/.test(document.body.getAttribute('data-page') || '')) return;
+      el = document.createElement('section'); el.id = 'usualShelf'; el.className = 'usual-shelf';
+      anchor.parentNode.insertBefore(el, anchor);
+    }
+    el.innerHTML = `<div class="wrap"><div class="usual-head"><strong>Your usual</strong> <span>the things you order most - tap to add</span></div>${html}</div>`;
+  }
+
+  // ---------- STOCK BY BRANCH (v1.8) ----------
+  let branchOut = {}; // {branchId: [productIds that branch has run out of]}
+  const baseProductId = k => String(k).split('::')[0];
+  async function loadBranchStock(){
+    if(!apiAvailable()) return;
+    try{ const r = await fetch(`${apiBase()}/api/branch-stock`, {cache:'no-store'}); if(r.ok){ branchOut = (await r.json()).out || {}; } }catch(e){}
+    refreshBranchSuggestions(); updateCartUI();
+  }
+  function missingAt(branchId){
+    const out = new Set(branchOut[branchId] || []);
+    return Object.keys(cart).filter(k => out.has(baseProductId(k))).map(k => cart[k].item.name);
+  }
+  function selectedBranch(){
+    if(selectedDeliveryMethod === 'delivery'){ const el = document.getElementById('deliveryBranch'); return el ? branches.find(b => b.id === el.value) : null; }
+    const el = document.getElementById('branchSelect'); return el ? branches.find(b => branchLabel(b) === el.value) : null;
+  }
+  function refreshStockNote(){
+    const box = document.getElementById('stockNote'); if(!box) return;
+    const b = selectedBranch(), miss = b ? missingAt(b.id) : [];
+    if(!b || !miss.length){ box.style.display = 'none'; return; }
+    const ref = selectedDeliveryMethod === 'delivery' ? (capturedLocation || areaLocation) : (userGeo || areaLocation || capturedLocation);
+    const ranked = ref ? rankBranches(ref) : branches.map(x => ({branch: x, km: 0}));
+    const alt = ranked.find(r => r.branch.id !== b.id && !missingAt(r.branch.id).length);
+    box.className = 'branch-suggest warn';
+    box.innerHTML = `⚠ <strong>${escB(b.name)}</strong> has run out of ${miss.map(escB).join(', ')}.` +
+      (alt ? ` <button type="button" class="bs-btn" onclick="useBranchWithStock('${escB(alt.branch.id)}')">Use ${escB(alt.branch.name)} instead - it has everything</button>` : ' Please remove the item or message us on WhatsApp.');
+    box.style.display = 'block';
+  }
+  function useBranchWithStock(id){
+    const b = branches.find(x => x.id === id); if(!b) return;
+    if(selectedDeliveryMethod === 'delivery'){ document.getElementById('deliveryBranch').value = b.id; originManual = true; updateDeliveryFeeDisplay(); }
+    else { document.getElementById('branchSelect').value = branchLabel(b); pickupManual = true; }
+    refreshBranchSuggestions();
+  }
+
+  // ---------- REVIEW AFTER DELIVERY (v1.8) - shown inside order tracking once an order is completed ----------
+  let reviewRating = 0, reviewPhotoData = '';
+  function reviewFormHTML(o){
+    const c = loadJSON(CUSTOMER_KEY, {}) || {};
+    return `<div class="review-form" id="reviewForm"><h4>How was your order?</h4>
+      <div class="rf-stars" id="rfStars">${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" onclick="setReviewStars(${n})" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}</div>
+      <input class="account-field" id="rfPhone" type="tel" placeholder="Phone you ordered with" value="${esc(c.phone || '')}">
+      <textarea class="account-field" id="rfComment" rows="3" maxlength="600" placeholder="Tell others about the meat, the packaging, the delivery (optional)"></textarea>
+      <label class="rf-photo">📷 Add a photo (optional)<input type="file" accept="image/*" id="rfPhoto" onchange="pickReviewPhoto(this)"></label>
+      <div class="account-note" id="rfPhotoNote"></div>
+      <button type="button" class="account-submit" onclick="submitReview(${o.id})">Send review</button>
+      <p class="account-note" id="rfNote"></p></div>`;
+  }
+  function setReviewStars(n){
+    reviewRating = n;
+    document.querySelectorAll('#rfStars button').forEach(b => b.classList.toggle('on', Number(b.dataset.n) <= n));
+  }
+  function pickReviewPhoto(inp){
+    const note = document.getElementById('rfPhotoNote'); reviewPhotoData = '';
+    const f = inp.files && inp.files[0]; if(!f){ note.textContent = ''; return; }
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      const r = Math.min(1, 1000 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      let q = 0.8, d = c.toDataURL('image/jpeg', q);
+      while(d.length > 1100000 && q > 0.35){ q -= 0.1; d = c.toDataURL('image/jpeg', q); }
+      URL.revokeObjectURL(url);
+      if(d.length > 1150000){ note.textContent = 'That photo is too large - please choose a smaller one.'; return; }
+      reviewPhotoData = d; note.textContent = 'Photo added ✓';
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); note.textContent = 'Could not read that photo.'; };
+    img.src = url;
+  }
+  async function submitReview(orderId){
+    const note = document.getElementById('rfNote');
+    if(!reviewRating){ note.textContent = 'Please tap the stars first.'; return; }
+    note.textContent = 'Sending…';
+    try{
+      await apiFetch('/reviews', {method:'POST', body: JSON.stringify({orderId, phone: document.getElementById('rfPhone').value, rating: reviewRating,
+        comment: document.getElementById('rfComment').value, photo: reviewPhotoData || undefined, name: (loadJSON(CUSTOMER_KEY, {}) || {}).name || ''})});
+      document.getElementById('reviewForm').innerHTML = '<h4>Thank you! ⭐</h4><p class="account-note">Your review will appear on our Reviews page once we have checked it.</p>';
+    }catch(e){ note.textContent = e.message; }
+  }
+  window.setReviewStars = setReviewStars; window.pickReviewPhoto = pickReviewPhoto; window.submitReview = submitReview;
+  window.addUsual = addUsual; window.useBranchWithStock = useBranchWithStock;
+
+  // ---------- AREAS, ZONE PRICING & NEAREST BRANCH (v1.7) ----------
+  var DELIVERY_CFG = {baseFee:100, perKm:25, bandKm:2, maxFee:450, maxKm:30, roadFactor:1.3, nearerBranchKm:2.5};
+  let areasList = [];        // zones admin has ticked as served
+  let areaLocation = null;   // {id,name,region,lat,lng} picked in checkout "Your area"
+  let userGeo = null;        // {lat,lng} from "Use my location" in checkout
+  let originManual = false, pickupManual = false, inSuggestRefresh = false, lastBest = null;
+  let areasReadyResolve; const areasReady = new Promise(r => { areasReadyResolve = r; });
+
+  // Branches ranked by straight-line distance; km is converted to an estimated road distance.
+  function rankBranches(pt){
+    return branches.filter(b => Number.isFinite(b.lat) && Number.isFinite(b.lng))
+      .map(b => ({branch:b, km: haversineKm(pt.lat, pt.lng, b.lat, b.lng) * DELIVERY_CFG.roadFactor}))
+      .sort((a,b) => a.km - b.km);
+  }
+  // Quote for one zone: nearest listed branch, estimated road km, band fee.
+  function areaQuote(a){
+    const r = rankBranches(a)[0];
+    if(!r) return null;
+    return {branch:r.branch, km:r.km, fee:bandedFee(r.km), far: r.km > DELIVERY_CFG.maxKm};
+  }
+
+  async function loadAreas(){
+    let data = null;
+    if(apiAvailable()){
+      try{ const r = await fetch(`${apiBase()}/api/areas`, {cache:'no-store'}); if(r.ok) data = await r.json(); }catch(e){}
+    }
+    if(!data){
+      try{
+        const r = await fetch('./areas.json', {cache:'no-store'});
+        if(r.ok){ const d = await r.json(); data = {config:d.config, areas:(d.areas||[]).filter(a => a.active)}; }
+      }catch(e){}
+    }
+    if(data){
+      DELIVERY_CFG = Object.assign(DELIVERY_CFG, data.config || {});
+      areasList = (data.areas || []).map(a => Object.assign({}, a, {lat:Number(a.lat), lng:Number(a.lng)})).filter(a => Number.isFinite(a.lat) && Number.isFinite(a.lng));
+    }
+    buildAreaSelect();
+    updateDeliveryFeeDisplay();
+    areasReadyResolve();
+  }
+
+  function injectCheckoutSmarts(){
+    const methods = document.getElementById('deliveryMethods');
+    if(!methods || document.getElementById('custArea')) return;
+    const label = methods.previousElementSibling; // the "Delivery Method" label
+    const wrap = document.createElement('div');
+    wrap.innerHTML =
+      '<div class="pay-label">📍 Your area <span style="font-weight:400;opacity:.7">(finds your nearest branch)</span></div>' +
+      '<select class="branch-select" id="custArea"><option value="">Select your area…</option></select>' +
+      '<button type="button" class="stk-btn" id="geoBtn" style="background:var(--maroon);margin:8px 0 6px">📍 Use my location</button>' +
+      '<div class="stk-status" id="geoStatus"></div>' +
+      '<div id="branchSuggest" class="branch-suggest" style="display:none"></div>' +
+      '<div id="stockNote" class="branch-suggest warn" style="display:none"></div>';
+    label.parentNode.insertBefore(wrap, label);
+    document.getElementById('custArea').addEventListener('change', e => {
+      const a = areasList.find(x => x.id === e.target.value);
+      areaLocation = a ? {id:a.id, name:a.name, region:a.region, lat:a.lat, lng:a.lng} : null;
+      pickupManual = false; originManual = false;
+      updateDeliveryFeeDisplay(); refreshBranchSuggestions();
+    });
+    document.getElementById('geoBtn').addEventListener('click', findNearestBranch);
+    const pick = document.getElementById('branchSelect'), del = document.getElementById('deliveryBranch');
+    if(pick) pick.addEventListener('input', () => { pickupManual = true; refreshBranchSuggestions(); });
+    if(del) del.addEventListener('input', () => { originManual = true; setTimeout(refreshBranchSuggestions, 0); });
+    prefillCustomer();
+  }
+
+  function buildAreaSelect(){
+    const sel = document.getElementById('custArea');
+    if(!sel) return;
+    const keep = sel.value;
+    const regions = {};
+    areasList.forEach(a => { (regions[a.region] = regions[a.region] || []).push(a); });
+    sel.innerHTML = '<option value="">Select your area…</option>' +
+      Object.keys(regions).map(r => `<optgroup label="${escB(r)}">${regions[r].map(a => `<option value="${escB(a.id)}">${escB(a.name)}</option>`).join('')}</optgroup>`).join('') +
+      '<option value="__other">My area is not listed</option>';
+    let want = keep;
+    if(!want){ try{ want = localStorage.getItem('azizoArea') || ''; }catch(e){} }
+    if(want && [...sel.options].some(o => o.value === want)){
+      sel.value = want;
+      const a = areasList.find(x => x.id === want);
+      if(a && !areaLocation) areaLocation = {id:a.id, name:a.name, region:a.region, lat:a.lat, lng:a.lng};
+    }
+  }
+
+  function findNearestBranch(){
+    const st = document.getElementById('geoStatus');
+    if(!navigator.geolocation){ st.textContent = 'Location is not supported on this browser - pick your area above instead.'; st.className = 'stk-status pending'; return; }
+    st.textContent = 'Finding you…'; st.className = 'stk-status pending';
+    navigator.geolocation.getCurrentPosition(pos => {
+      userGeo = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+      pickupManual = false;
+      st.textContent = 'Location found ✓'; st.className = 'stk-status ok';
+      refreshBranchSuggestions();
+    }, () => {
+      st.textContent = 'Could not get your location - pick your area above instead.'; st.className = 'stk-status pending';
+    }, {enableHighAccuracy:false, timeout:8000, maximumAge:300000});
+  }
+
+  // Picks the nearest listed branch automatically (until the customer chooses one themselves) and
+  // warns when a manually chosen branch is much farther than the nearest one.
+  function refreshBranchSuggestions(){ refreshNearest(); refreshStockNote(); }
+  function refreshNearest(){
+    const box = document.getElementById('branchSuggest');
+    if(!box || inSuggestRefresh) return;
+    const delivery = selectedDeliveryMethod === 'delivery';
+    const ref = delivery ? (capturedLocation || areaLocation) : (userGeo || areaLocation || capturedLocation);
+    if(!ref || !branches.length){ box.style.display = 'none'; return; }
+    const ranked = rankBranches(ref);
+    if(!ranked.length){ box.style.display = 'none'; return; }
+    const sel = document.getElementById(delivery ? 'deliveryBranch' : 'branchSelect');
+    const valOf = r => delivery ? r.branch.id : branchLabel(r.branch);
+    const stocked = ranked.filter(r => !missingAt(r.branch.id).length);
+    const best = (stocked[0] || ranked[0]); lastBest = best;
+    const manual = delivery ? originManual : pickupManual;
+    if(!manual && sel.value !== valOf(best)){
+      sel.value = valOf(best);
+      if(delivery){ inSuggestRefresh = true; try{ updateDeliveryFeeDisplay(); } finally { inSuggestRefresh = false; } }
+    }
+    const cur = ranked.find(r => valOf(r) === sel.value) || best;
+    if(cur !== best && cur.km - best.km >= DELIVERY_CFG.nearerBranchKm){
+      box.className = 'branch-suggest warn';
+      box.innerHTML = `💡 <strong>${escB(best.branch.name)}</strong> is nearer to you (~${best.km.toFixed(1)} km) than ${escB(cur.branch.name)} (~${cur.km.toFixed(1)} km).` +
+        ` <button type="button" class="bs-btn" onclick="acceptNearestBranch()">Switch to ${escB(best.branch.name)}</button>`;
+    } else {
+      box.className = 'branch-suggest ok';
+      box.innerHTML = `✓ Nearest branch to you: <strong>${escB(best.branch.name)}</strong> (~${best.km.toFixed(1)} km by road)`;
+    }
+    box.style.display = 'block';
+  }
+  function acceptNearestBranch(){
+    if(!lastBest) return;
+    const delivery = selectedDeliveryMethod === 'delivery';
+    if(delivery) originManual = false; else pickupManual = false;
+    refreshBranchSuggestions();
+  }
+
   // ---------- DELIVERY FEE ENGINE ----------
-  // Rule: minimum KSh 100, +KSh 30 per km travelled, capped at KSh 450.
   // Waived entirely once the items subtotal reaches CONFIG.FREE_DELIVERY_THRESHOLD.
-  function computeDeliveryFee(km){
+  // v1.7: zone-banded. Road distance is rounded UP to the next band (default every 2 km) so areas
+  // at a similar distance share one price: fee = base + perKm x band, capped. All five numbers are
+  // edited in admin > Areas (DELIVERY_CFG below is just the fallback / what the server sends).
+  function bandedFee(roadKm){
+    const c = DELIVERY_CFG;
+    const band = Math.max(c.bandKm, Math.ceil(roadKm / c.bandKm) * c.bandKm);
+    return Math.min(c.maxFee, Math.round((c.baseFee + c.perKm * band) / 10) * 10);
+  }
+  function computeDeliveryFee(roadKm){
     if(getItemsSubtotal() >= CONFIG.FREE_DELIVERY_THRESHOLD) return 0;
-    return Math.min(450, Math.round(100 + 30 * km));
+    return bandedFee(roadKm);
   }
   function haversineKm(lat1, lng1, lat2, lng2){
     const R = 6371;
@@ -1109,28 +1422,32 @@
     const freeDelivery = deliveryFeeInfo.fee === 0;
     feeEl.innerHTML = freeDelivery
       ? `🎉 <strong>Free delivery unlocked!</strong> (order over KSh ${CONFIG.FREE_DELIVERY_THRESHOLD})`
-      : `Distance from ${escB(branchLabel(origin))}: ~${deliveryFeeInfo.km.toFixed(1)} km ${deliveryFeeInfo.routed?'(road distance)':'(straight-line estimate)'}<br><strong>Delivery Fee: KSh ${deliveryFeeInfo.fee}</strong>`;
+      : `Distance from ${escB(branchLabel(origin))}: ~${deliveryFeeInfo.km.toFixed(1)} km ${deliveryFeeInfo.routed?'(road distance)':(deliveryFeeInfo.approx && areaLocation ? '(estimate for '+escB(areaLocation.name)+' - add your address for the exact fee)' : '(road estimate)')}<br><strong>Delivery Fee: KSh ${deliveryFeeInfo.fee}</strong>` +
+        (deliveryFeeInfo.km > DELIVERY_CFG.maxKm ? `<br><small>Long distance - we will confirm the final fee with you on WhatsApp.</small>` : '');
     updateCartUI();
   }
 
   async function updateDeliveryFeeDisplay(){
     const feeEl = document.getElementById('deliveryFeeDisplay');
-    if(selectedDeliveryMethod !== 'delivery' || !capturedLocation){
+    const dest = capturedLocation || areaLocation;
+    if(selectedDeliveryMethod !== 'delivery' || !dest){
       feeSeq++;
       deliveryFeeInfo = null;
       feeEl.textContent = '';
       updateCartUI();
+      if(!inSuggestRefresh) refreshBranchSuggestions();
       return;
     }
+    if(!inSuggestRefresh) refreshBranchSuggestions(); // may switch the dispatch branch to the nearest one
     const mySeq = ++feeSeq;
     const origin = getOriginBranch();
-    const dest = capturedLocation;
 
     // Show a straight-line figure straight away so a fee is always on the screen (and in
     // the order) even while the road distance is still being looked up — then upgrade it.
-    const straightKm = haversineKm(origin.lat, origin.lng, dest.lat, dest.lng);
-    deliveryFeeInfo = {km: straightKm, fee: computeDeliveryFee(straightKm), routed:false};
+    const straightKm = haversineKm(origin.lat, origin.lng, dest.lat, dest.lng) * DELIVERY_CFG.roadFactor;
+    deliveryFeeInfo = {km: straightKm, fee: computeDeliveryFee(straightKm), routed:false, approx: !capturedLocation};
     showDeliveryFee(origin);
+    if(!capturedLocation) return; // area chosen but no exact pin yet: the zone estimate is enough
 
     // Best source first: Google (only if a key is configured), then free OSRM road distance.
     const roadKm = (await googleDistanceKm(origin, dest)) ?? (await osrmDistanceKm(origin, dest));
@@ -1524,7 +1841,7 @@
       deliveryInfo = {
         method:'Pickup',
         branch: document.getElementById('branchSelect').value,
-        time: document.getElementById('pickupTime').value || 'Not specified'
+        time: ''
       };
     } else {
       const address = document.getElementById('deliveryAddress').value.trim();
@@ -1537,14 +1854,17 @@
       const originBranch = branchLabel(getOriginBranch());
       const fee = deliveryFeeInfo ? deliveryFeeInfo.fee : null;
       const distanceKm = deliveryFeeInfo ? deliveryFeeInfo.km : null;
-      deliveryInfo = {method:'Home Delivery', address, mapsLink, pinned: !!capturedLocation, originBranch, fee, distanceKm};
+      deliveryInfo = {method:'Home Delivery', address, area: areaLocation ? areaLocation.name : '', mapsLink, pinned: !!capturedLocation, originBranch, fee, distanceKm};
       if(fee != null) total += fee;
     }
+
+    deliveryInfo.time = (document.getElementById('prefTime') || {}).value || 'No preference';
+    const notes = ((document.getElementById('orderNotes') || {}).value || '').trim();
 
     const promo = appliedPromo ? {code: appliedPromo.code, pct: appliedPromo.discountPct, amount: Math.round(itemsSubtotal * appliedPromo.discountPct / 100)} : null;
     if(promo) total -= promo.amount;
 
-    return {lines, itemsSubtotal, total, clientName, clientPhone, deliveryInfo, payment: selectedPayMethod, promo};
+    return {lines, itemsSubtotal, total, clientName, clientPhone, deliveryInfo, notes, payment: selectedPayMethod, promo};
   }
 
   function validateOrder(order){
@@ -1554,6 +1874,8 @@
     if(order.deliveryInfo.method === 'Home Delivery' && !order.deliveryInfo.address && !capturedLocation){
       return 'Please type your delivery address or use current location.';
     }
+    const sb = selectedBranch(), sbMiss = sb ? missingAt(sb.id) : [];
+    if(sbMiss.length) return `${sb.name} has run out of ${sbMiss.join(', ')}. Choose another branch or remove the item.`;
     if(selectedPayMethod === 'mpesa'){
       const digits = document.getElementById('mpesaPhone').value.replace(/\D/g,'');
       if(digits.length !== 9) return 'Enter your M-Pesa number to continue, or switch to Cash.';
@@ -1591,10 +1913,10 @@
     if(order.deliveryInfo.method === 'Pickup'){
       detailRows.push(['Fulfilment', 'Pickup']);
       detailRows.push(['Pickup Branch', order.deliveryInfo.branch]);
-      detailRows.push(['Pickup Time', order.deliveryInfo.time]);
     } else {
       detailRows.push(['Fulfilment', 'Home Delivery']);
       detailRows.push(['Dispatch Branch', order.deliveryInfo.originBranch || '—']);
+      if(order.deliveryInfo.area) detailRows.push(['Area', order.deliveryInfo.area]);
       detailRows.push(['Delivery Address', order.deliveryInfo.address || '(shared via map pin)']);
       if(order.deliveryInfo.distanceKm != null){
         detailRows.push(['Distance', `~${order.deliveryInfo.distanceKm.toFixed(1)} km`]);
@@ -1602,6 +1924,8 @@
       if(order.deliveryInfo.mapsLink) detailRows.push(['Map Link', order.deliveryInfo.mapsLink]);
     }
 
+    detailRows.push(['Preferred Time', order.deliveryInfo.time]);
+    if(order.notes) detailRows.push(['Butcher Instructions', order.notes]);
     doc.autoTable({
       startY: y,
       body: detailRows,
@@ -1663,14 +1987,16 @@
     if(order.deliveryInfo.method === 'Pickup'){
       msg += `*Fulfilment:* Pickup\n`;
       msg += `*Branch:* ${order.deliveryInfo.branch}\n`;
-      msg += `*Pickup Time:* ${order.deliveryInfo.time}\n`;
     } else {
       msg += `*Fulfilment:* Home Delivery\n`;
       if(order.deliveryInfo.originBranch) msg += `*Dispatch From:* ${order.deliveryInfo.originBranch}\n`;
+      if(order.deliveryInfo.area) msg += `*Area:* ${order.deliveryInfo.area}\n`;
       if(order.deliveryInfo.address) msg += `*Address:* ${order.deliveryInfo.address}\n`;
       if(order.deliveryInfo.distanceKm != null) msg += `*Distance:* ~${order.deliveryInfo.distanceKm.toFixed(1)} km\n`;
       if(order.deliveryInfo.mapsLink) msg += `*Location Pin:* ${order.deliveryInfo.mapsLink}\n`;
     }
+    msg += `*Preferred Time:* ${order.deliveryInfo.time}\n`;
+    if(order.notes) msg += `*Butcher Instructions:* ${order.notes}\n`;
     msg += `*Payment:* ${order.payment==='mpesa' ? 'M-Pesa' : 'Cash'}\n`;
     if(recurringOrderInfo){
       msg += `*Recurring Order:* Yes — please repeat this ${recurringOrderInfo.frequency.toLowerCase()} (we'll confirm each cycle with you on WhatsApp, no automatic billing)\n`;
@@ -1733,6 +2059,7 @@
       if(waWin && !waWin.closed){ waWin.location.href = url; } else { window.open(url, '_blank'); }
       trackConversion('order_placed', {value: order.total, currency: 'KES'});
       saveLastOrder();
+      rememberCustomer(order);
       recurringOrderInfo = null;
       if(btn) btn.disabled = false;
       if(!pdfOk){
@@ -1788,7 +2115,10 @@
           fulfilment: order.deliveryInfo.method === 'Pickup' ? 'pickup' : 'delivery',
           branch: order.deliveryInfo.branch || order.deliveryInfo.originBranch || null,
           pickup_time: order.deliveryInfo.time || null,
-          delivery_address: order.deliveryInfo.address || null,
+          notes: order.notes || null,
+          area: order.deliveryInfo.area || null,
+          recurring: recurringOrderInfo ? recurringOrderInfo.frequency : null,
+          delivery_address: order.deliveryInfo.address ? (order.deliveryInfo.area ? order.deliveryInfo.address + ' (' + order.deliveryInfo.area + ')' : order.deliveryInfo.address) : (order.deliveryInfo.area || null),
           delivery_lat: capturedLocation ? capturedLocation.lat : null,
           delivery_lng: capturedLocation ? capturedLocation.lng : null,
           delivery_fee: order.deliveryInfo.fee || 0,
@@ -1837,10 +2167,21 @@
   // Fixed to the viewport (not the page), so it travels with the user as they
   // scroll rather than sitting only in the footer. Reuses the same icons/URLs
   // as the footer's contact-icons and hides any platform left unconfigured.
+  function injectFloatingContact(){
+    if(document.getElementById('floatingContact')) return;
+    const bar = document.createElement('div');
+    bar.id = 'floatingContact';
+    bar.className = 'floating-contact';
+    bar.innerHTML =
+      `<a class="fc-call" href="tel:${SHARED_PHONE_TEL}" title="Call us" aria-label="Call us"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg></a>` +
+      `<a class="fc-wa" href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener" title="WhatsApp us" aria-label="WhatsApp us"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.74 13.4L3 21l3.71-1.28a8.9 8.9 0 0 0 4.34 1.11h.01a8.93 8.93 0 0 0 8.93-8.93 8.87 8.87 0 0 0-2.4-6.27zm-5.55 13.7h-.01a7.4 7.4 0 0 1-3.78-1.04l-.27-.16-2.81.97.95-2.75-.18-.28a7.42 7.42 0 0 1 11.61-9.16 7.36 7.36 0 0 1 2.18 5.25 7.43 7.43 0 0 1-7.69 7.17zm4.07-5.56c-.22-.11-1.31-.65-1.52-.72-.2-.08-.35-.11-.5.11-.15.22-.57.72-.7.87-.13.15-.26.17-.48.06a6.06 6.06 0 0 1-1.78-1.1 6.65 6.65 0 0 1-1.23-1.53c-.13-.22 0-.34.1-.45.1-.1.22-.26.33-.39.11-.13.15-.22.22-.37.07-.15.04-.28-.02-.39-.06-.11-.5-1.2-.68-1.65-.18-.43-.36-.37-.5-.38h-.43a.82.82 0 0 0-.6.28 2.5 2.5 0 0 0-.78 1.86c0 1.1.8 2.16.91 2.31.11.15 1.57 2.4 3.81 3.36.53.23.95.37 1.27.47.53.17 1.02.15 1.4.09.43-.06 1.31-.53 1.49-1.05.18-.51.18-.95.13-1.04-.05-.1-.2-.15-.42-.26z"/></svg></a>`;
+    document.body.appendChild(bar);
+  }
+
   function injectFloatingSocial(){
     if(document.getElementById('floatingSocial')) return;
     const links = [];
-    links.push(`<a href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener" title="WhatsApp us" aria-label="WhatsApp us"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.74 13.4L3 21l3.71-1.28a8.9 8.9 0 0 0 4.34 1.11h.01a8.93 8.93 0 0 0 8.93-8.93 8.87 8.87 0 0 0-2.4-6.27zm-5.55 13.7h-.01a7.4 7.4 0 0 1-3.78-1.04l-.27-.16-2.81.97.95-2.75-.18-.28a7.42 7.42 0 0 1 11.61-9.16 7.36 7.36 0 0 1 2.18 5.25 7.43 7.43 0 0 1-7.69 7.17zm4.07-5.56c-.22-.11-1.31-.65-1.52-.72-.2-.08-.35-.11-.5.11-.15.22-.57.72-.7.87-.13.15-.26.17-.48.06a6.06 6.06 0 0 1-1.78-1.1 6.65 6.65 0 0 1-1.23-1.53c-.13-.22 0-.34.1-.45.1-.1.22-.26.33-.39.11-.13.15-.22.22-.37.07-.15.04-.28-.02-.39-.06-.11-.5-1.2-.68-1.65-.18-.43-.36-.37-.5-.38h-.43a.82.82 0 0 0-.6.28 2.5 2.5 0 0 0-.78 1.86c0 1.1.8 2.16.91 2.31.11.15 1.57 2.4 3.81 3.36.53.23.95.37 1.27.47.53.17 1.02.15 1.4.09.43-.06 1.31-.53 1.49-1.05.18-.51.18-.95.13-1.04-.05-.1-.2-.15-.42-.26z"/></svg></a>`);
+    // WhatsApp now lives in the always-visible contact buttons (injectFloatingContact)
     if(CONFIG.FACEBOOK_URL){
       links.push(`<a href="${CONFIG.FACEBOOK_URL}" target="_blank" rel="noopener" title="Facebook" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg></a>`);
     }
@@ -1850,6 +2191,7 @@
     if(CONFIG.TIKTOK_URL){
       links.push(`<a href="${CONFIG.TIKTOK_URL}" target="_blank" rel="noopener" title="TikTok" aria-label="TikTok"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 2h-3v14.2a2.8 2.8 0 1 1-2-2.68V10.4a5.9 5.9 0 1 0 5 5.83V8.9a7.6 7.6 0 0 0 4.5 1.5V7.4a4.6 4.6 0 0 1-4.5-4.5V2z"/></svg></a>`);
     }
+    if(!links.length) return;
     const bar = document.createElement('div');
     bar.id = 'floatingSocial';
     bar.className = 'floating-social';
@@ -1891,6 +2233,9 @@
         `<li class="${i < idx ? 'done' : i === idx ? 'now' : ''}">${esc(TRACK_LABELS[s])}</li>`).join('') + '</ol>';
     }
     html += `<div class="order-history-meta">${o.fulfilment === 'pickup' ? 'Pickup' : 'Delivery'}${o.branch ? ' · ' + esc(o.branch) : ''}${o.pickup_time ? ' · ' + esc(o.pickup_time) : ''}</div>`;
+    if(o.status === 'completed'){
+      html += o.reviewed ? '<p class="account-note">Thanks for reviewing this order ⭐</p>' : reviewFormHTML(o);
+    }
     if(o.created_at) html += `<div class="order-history-meta">Placed ${esc(new Date(String(o.created_at).replace(' ','T') + (String(o.created_at).includes('Z')?'':'Z')).toLocaleString())}</div>`;
     return html;
   }
@@ -2460,10 +2805,14 @@
   document.getElementById('footerLogo').src = document.getElementById('navLogo').src;
   updateCartUI(); // ensures cart-dependent UI (e.g. the Reorder button) is correct on first load
   loadProducts(); // fetches products.json and re-renders above with real data, if available
+  injectCheckoutSmarts(); // 'Your area' + nearest-branch suggestions in checkout
+  loadAreas();
+  loadBranchStock();
   loadBranches(); // live branch list (admin-managed) replaces the built-in one once it arrives
   injectAccountUI(); // optional customer login/order-history — no-ops until API_BASE_URL is set
   injectFloatingBuyNow();
   injectFloatingSocial();
+  injectFloatingContact();
   // The Buy Now button is always visible via CSS alone now. Only the social
   // sidebar still needs the scroll-triggered reveal, to clear the home page
   // hero's stats row on small screens — see the matching comment in styles.css.

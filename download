@@ -1,0 +1,5 @@
+PORT=3000
+JWT_SECRET=phone-test-only-secret-change-before-real-deploy
+ADMIN_PASSWORD=majani90
+
+STAFF_PASSWORD=staff1234

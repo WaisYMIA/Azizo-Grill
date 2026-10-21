@@ -1,12 +1,16 @@
 // Azizo Butchery & Grill — Service Worker (multi-page site)
 // Bump CACHE_NAME whenever shared assets change so visitors get the update.
-const CACHE_NAME = 'azizo-v5';
+const CACHE_NAME = 'azizo-v18';
 const CORE_ASSETS = [
   './',
   './index.html',
   './fresh-market.html',
   './ready-to-eat.html',
   './meal-planner.html',
+  './budget.html',
+  './budget.js',
+  './areas.html',
+  './areas.js',
   './outdoor-events.html',
   './recipes.html',
   './about.html',
@@ -56,6 +60,10 @@ self.addEventListener('fetch', (event) => {
   // straight through untouched and let the browser's own (uncached) fetch
   // handle them.
   if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+  // Staff and admin screens are working tools — always fetch them fresh, never from the cache.
+  if (/\/(staff|rider|admin)(-reports|-areas|-reviews)?\.(html|js)$/.test(url.pathname)) {
     return;
   }
   event.respondWith(

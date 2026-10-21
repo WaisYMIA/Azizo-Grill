@@ -1,7 +1,7 @@
 # Azizo Butchery & Grill — Website + Backend
 
 Full source for the Azizo Butchery and Grill website: a static, responsive
-multi-page frontend (home, fresh market, ready-to-eat, meal planner, outdoor
+multi-page frontend (home, fresh market, ready-to-eat, meal planner, meat budget planner, areas we serve, outdoor
 events, recipes, about, reviews, FAQ, contact) backed by an admin-managed
 product catalog and order log. The frontend adapts across mobile, tablet and
 desktop breakpoints and works as an installable PWA.
@@ -25,13 +25,13 @@ admin orders dashboard, and optional customer accounts.
 ```bash
 cd backend
 npm install
-cp .env.example .env    # then edit ADMIN_PASSWORD and JWT_SECRET
+cp .env.example .env    # then edit ADMIN_PASSWORD, STAFF_PASSWORD and JWT_SECRET
 npm start                # or: node server.js
 ```
 
 Then open `site/index.html` with `site/app.js`'s `CONFIG.API_BASE_URL` set to
 `http://localhost:3000` (or serve the whole repo with any static file server
-so relative paths resolve). Admin dashboard: `site/admin.html`.
+so relative paths resolve). Admin dashboard: `site/admin.html`; staff `site/staff.html`; riders `site/rider.html`.
 
 ## Quick start (PHP backend, alternative)
 
@@ -39,6 +39,12 @@ See `backend-php/config.php` and `backend-php/schema.sql` — point a MySQL
 database at the schema, edit the config constants (or set the matching
 environment variables), and point your web server's document root at
 `backend-php/`.
+
+## Documentation
+
+- `DOCUMENTATION.md` - features, handbook, pricing, configuration, API reference, go-live checklist
+- `CHANGELOG.md` - what changed in each version
+- `backend/README.md` - Node backend setup and deployment
 
 ## Deploying for real
 
@@ -49,13 +55,19 @@ environment variables), and point your web server's document root at
   delivery-distance pricing, replace placeholder product photos via the
   admin dashboard, and verify branch GPS coordinates.
 
-## Branches, tracking & free map services
+## What is in this version (v1.8)
 
-- **Branches (admin ▸ Branches tab):** tick *Show on website* to publish a branch; *Edit* changes its address, map pin, hours and its own call-me phone number. The WhatsApp ordering number is the same for every branch (`CONFIG.WA_NUMBER` in `site/app.js`). Ten extra Nairobi middle/high-end branches ship **unlisted** with approximate pins — check a pin before publishing. Without a backend the site reads `site/branches.json` instead.
-- **Order tracking:** after checkout the customer gets an order number; *Account ▸ Track an order* (or any page with `?track=123`) shows its status from the number alone (`GET /api/orders/track`, status-only reply, rate-limited). Admin statuses: received → preparing → ready / out for delivery → completed.
-- **Free map services:** delivery fees use road distance from OSRM (straight-line estimate if unreachable); address search uses Photon with OpenStreetMap Nominatim as backup. These are shared free services — fine for light use; a Google key (optional) is used first when set.
-- **Catalog top-up:** on start-up an existing database gets the new menu items once (sausages, stew packs, fish baskets, broth bundle) without touching your edits. Prices are placeholders — edit them in admin.
-- **PHP backend:** has branches + tracking, but its products API is older than the Node one (no groceries).
+The full feature guide, staff/admin handbook, delivery-pricing formula and API reference are in **`DOCUMENTATION.md`**.
+In short:
+
+- **Customer site:** shop, cart and WhatsApp checkout with **preferred time**, **butcher instructions**, **area + nearest-branch** suggestions and **zone-banded delivery fees**; **Areas We Serve** (`areas.html`); **Meat Budget Planner** (`budget.html`); meal plans with recurring orders; order tracking; **verified reviews** (with photo); **your usual** and saved details for returning customers; floating Call and WhatsApp buttons.
+- **Staff (`staff.html`, `STAFF_PASSWORD`):** live orders with one-tap **WhatsApp status messages**, today's totals, **stock per branch**, **standing (recurring) orders** with one-tap repeat, promo codes, branch directory.
+- **Riders (`rider.html`):** today's deliveries grouped by branch and road, cash to collect, call / WhatsApp / map, delivered button.
+- **Admin (`admin.html`, `ADMIN_PASSWORD`):** Products (with private cost prices), Orders, **Branches** (add, show or hide, e.g. when closed), **Areas** (all Nairobi regions split into zones, tick which are served, delivery pricing), **Reviews** (moderation), **Reports** (sales, profit & loss, accountant Excel pack).
+- **Free map services:** delivery distance uses OSRM road distance (estimate if unreachable); address search uses Photon with OpenStreetMap Nominatim as backup. A Google key (optional) is used first when set.
+- **Catalog top-up:** on start-up an existing database gets new menu items once without touching your edits. Prices are placeholders: edit them in admin.
+- **Without a backend** the site still works from `products.json`, `branches.json` and `areas.json` and sends orders over WhatsApp; staff, rider, reviews, reports and admin need the backend.
+- **PHP backend:** same API as the Node one, but not yet run against a real MySQL server, and its products API has no groceries group.
 
 ## Responsive design
 
