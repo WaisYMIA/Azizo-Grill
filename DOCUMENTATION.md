@@ -260,3 +260,42 @@ Database changes are applied automatically on start-up (new tables and columns a
 - **Updates:** installed apps check for a new version on open, on return and every 30 minutes, then offer "Update now".
 - **Releasing an update:** change the site files, then edit two things: `CACHE_NAME` in `site/sw.js` (e.g. `azizo-v20`) and `APP_VERSION` in `site/pwa.js`. Upload. Visitors get the prompt automatically. Without the `CACHE_NAME` bump, apps will not know anything changed.
 - On cPanel, make sure `sw.js` is not cached by the server for long (default settings are fine).
+
+## Cooking Hub (v2.0)
+
+**Public pages:** `recipes.html` (search, filters, tabs, share-your-recipe form) and `recipe.html?r=<slug>` (single recipe or blog post with sharing and comments).
+
+**Admin > Recipes** has seven sections:
+1. **Library:** every recipe and blog post. Search, filter by type / category / status, tick several and publish, make draft, feature, move category or delete in one go. Edit, View, Copy (duplicate as draft) and Delete per row.
+2. **New / Edit:** type (Recipe or Blog post), title, web address, summary, times, servings, difficulty, style, cuisine, ingredients (one per line; `## Heading` makes a group), method (one step per line), butcher's tip, extra notes, tags, badge label, featured, Published or Draft, and the photo.
+3. **Categories:** the filter chips on the public page. Renaming updates every recipe; a category must be empty before it is deleted.
+4. **Comments:** Pending, Approved, Hidden, All. Approve, hide, delete, or reply as "Azizo team". "Approve all shown" for quick clearing.
+5. **Reader submissions:** recipes, questions and feedback sent from the public form. "Create draft from this" opens the editor pre-filled; reply on WhatsApp or by email.
+6. **Images:** upload once, reuse anywhere. Photos are resized and compressed in the browser.
+7. **Settings & backup:** auto-publish comments, download or restore `recipes.json`, sitemap lines for new recipes.
+
+**Adding photos:** Admin > Recipes > edit a recipe > Photo > Upload photo (or Choose from library). Images are stored in `backend/uploads/media` (Node) or `uploads/media` (PHP); keep that folder when you redeploy.
+
+**Writing blog posts:** choose Type = Blog post. In the text, a blank line starts a paragraph, `## Heading` makes a heading, `- item` makes a bullet and `**word**` makes bold.
+
+**Comments and spam:** new comments wait for approval by default. Links are limited, a hidden field catches simple bots, and each visitor can post 8 times per hour.
+
+**Search engines:** each recipe page sets its own title, description and recipe markup. Add new recipes to `sitemap.xml` with the button in Settings & backup. Google reads these pages after running the page script, which it does, though static pages index slightly faster.
+
+**Without the backend (static hosting):** the public pages read `recipes.json`. Download a fresh copy from Settings & backup and replace the file in the site folder after editing. Comments, ratings and the submit form need the backend.
+
+**API (v2.0)**
+
+| Method and path | Who | What |
+|---|---|---|
+| `GET /api/recipes` | public | published recipes, blog posts, categories |
+| `GET /api/recipes/:id/comments` | public | approved comments |
+| `POST /api/recipes/:id/comments` | public | comment, rating, or reply (`parentId`) |
+| `POST /api/recipes/submit` | public | reader recipe, question or feedback |
+| `GET /api/recipes/admin/all` | admin | everything incl. drafts and pending counts |
+| `POST /api/recipes/admin`, `PUT` / `DELETE /api/recipes/admin/:id` | admin | create, update, delete |
+| `POST /api/recipes/admin/bulk` | admin | publish, draft, feature, unfeature, category, delete |
+| `GET /api/recipes/admin/export`, `POST .../import` | admin | backup and restore |
+| `POST .../settings`, `.../categories`, `.../comments`, `.../submissions` | admin | settings, categories, moderation, inbox |
+| `GET`, `POST /api/media`, `DELETE /api/media/:file` | admin | image library |
+

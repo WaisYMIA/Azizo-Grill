@@ -4,7 +4,7 @@ const fs = require('fs');
 const multer = require('multer');
 const XLSX = require('xlsx');
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requireStaff } = require('../middleware/auth');
 const router = express.Router();
 
 // ---------- image uploads ----------
@@ -48,7 +48,10 @@ const uploadExcel = multer({
 
 function rowToProduct(r) {
   return { id: r.id, cat: r.cat, kind: r.kind || undefined, name: r.name, desc: r.desc,
-    price: r.price, unit: r.unit, img: r.img || '', badges: r.badges ? JSON.parse(r.badges) : [], origin: r.origin || '' };
+    price: r.price, unit: r.unit, img: r.img || '', badges: r.badges ? JSON.parse(r.badges) : [], origin: r.origin || '', inStock: r.in_stock !== 0 };
+}
+// Cost price is private business data: only the admin endpoints expose it, never the public menu.
+function withCost(p, r) { p.costPrice = r.cost_price || 0; return p;
 }
 
 router.get('/', (req, res) => {
@@ -60,11 +63,19 @@ router.get('/', (req, res) => {
   });
 });
 
+// Admin view of the catalog, including private cost prices (used by admin.html and the reports).
+router.get('/admin/list', requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM products ORDER BY category_group, cat, name').all();
+  res.set('Cache-Control', 'no-store');
+  res.json({ products: rows.map(r => Object.assign(withCost(rowToProduct(r), r), { category_group: r.category_group })) });
+});
+
 // Create or update a product. multipart/form-data with an optional "image" file field
 // plus the usual text fields — this is what both "Save Item" and a photo upload in the
 // admin tool hit. JSON body (no file) still works for scripted/API use.
 router.post('/', requireAdmin, upload.single('image'), (req, res) => {
   const { id, category_group, cat, kind, name, desc, price, unit, origin } = req.body;
+  const cost_price = Math.max(0, Math.round(Number(req.body.cost_price) || 0));
   let { img } = req.body;
   let badges = req.body.badges;
   if (typeof badges === 'string') { try { badges = JSON.parse(badges); } catch (e) { badges = badges.split(',').map(s => s.trim()).filter(Boolean); } }
@@ -72,13 +83,22 @@ router.post('/', requireAdmin, upload.single('image'), (req, res) => {
   if (!['fresh', 'ready', 'groceries'].includes(category_group)) return res.status(400).json({ error: "category_group must be 'fresh', 'ready', or 'groceries'" });
   if (req.file) img = `/uploads/${req.file.filename}`; // an uploaded file always wins over a plain img string
   db.prepare(`
-    INSERT INTO products (id, category_group, cat, kind, name, desc, price, unit, img, badges, origin, updated_at)
-    VALUES (@id, @category_group, @cat, @kind, @name, @desc, @price, @unit, @img, @badges, @origin, datetime('now'))
+    INSERT INTO products (id, category_group, cat, kind, name, desc, price, unit, img, badges, origin, cost_price, updated_at)
+    VALUES (@id, @category_group, @cat, @kind, @name, @desc, @price, @unit, @img, @badges, @origin, @cost_price, datetime('now'))
     ON CONFLICT(id) DO UPDATE SET category_group=excluded.category_group, cat=excluded.cat, kind=excluded.kind,
       name=excluded.name, desc=excluded.desc, price=excluded.price, unit=excluded.unit, img=excluded.img,
-      badges=excluded.badges, origin=excluded.origin, updated_at=datetime('now')
-  `).run({ id, category_group, cat, kind: kind || null, name, desc: desc || '', price, unit, img: img || '', badges: JSON.stringify(badges || []), origin: origin || '' });
-  res.json({ ok: true, product: rowToProduct(db.prepare('SELECT * FROM products WHERE id = ?').get(id)) });
+      badges=excluded.badges, origin=excluded.origin, cost_price=excluded.cost_price, updated_at=datetime('now')
+  `).run({ id, category_group, cat, kind: kind || null, name, desc: desc || '', price, unit, img: img || '', badges: JSON.stringify(badges || []), origin: origin || '', cost_price });
+  const saved = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+  res.json({ ok: true, product: withCost(rowToProduct(saved), saved) });
+});
+
+// Staff mark an item sold out / back in stock (no price or wording changes — that stays admin-only).
+router.patch('/:id/stock', requireStaff, (req, res) => {
+  const inStock = req.body && req.body.inStock ? 1 : 0;
+  const result = db.prepare("UPDATE products SET in_stock = ?, updated_at = datetime('now') WHERE id = ?").run(inStock, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Product not found' });
+  res.json({ ok: true, inStock: !!inStock });
 });
 
 router.delete('/:id', requireAdmin, (req, res) => {
@@ -90,14 +110,14 @@ router.delete('/:id', requireAdmin, (req, res) => {
 // ---------- bulk Excel export/import ----------
 // One sheet, one row per product, columns matching exactly what the product form and
 // the database both use — so a round trip (export, edit in Excel, re-import) is lossless.
-const EXCEL_COLUMNS = ['id', 'category_group', 'cat', 'kind', 'name', 'desc', 'price', 'unit', 'img', 'badges', 'origin'];
+const EXCEL_COLUMNS = ['id', 'category_group', 'cat', 'kind', 'name', 'desc', 'price', 'unit', 'img', 'badges', 'origin', 'cost_price'];
 
 router.get('/export.xlsx', requireAdmin, (req, res) => {
   const rows = db.prepare('SELECT * FROM products ORDER BY category_group, cat, name').all();
   const sheetRows = rows.map(r => ({
     id: r.id, category_group: r.category_group, cat: r.cat, kind: r.kind || '',
     name: r.name, desc: r.desc || '', price: r.price, unit: r.unit, img: r.img || '',
-    badges: r.badges ? JSON.parse(r.badges).join(', ') : '', origin: r.origin || '',
+    badges: r.badges ? JSON.parse(r.badges).join(', ') : '', origin: r.origin || '', cost_price: r.cost_price || 0,
   }));
   const sheet = XLSX.utils.json_to_sheet(sheetRows, { header: EXCEL_COLUMNS });
   const workbook = XLSX.utils.book_new();
@@ -121,11 +141,11 @@ router.post('/import.xlsx', requireAdmin, uploadExcel.single('file'), (req, res)
 
   const errors = [];
   const upsert = db.prepare(`
-    INSERT INTO products (id, category_group, cat, kind, name, desc, price, unit, img, badges, origin, updated_at)
-    VALUES (@id, @category_group, @cat, @kind, @name, @desc, @price, @unit, @img, @badges, @origin, datetime('now'))
+    INSERT INTO products (id, category_group, cat, kind, name, desc, price, unit, img, badges, origin, cost_price, updated_at)
+    VALUES (@id, @category_group, @cat, @kind, @name, @desc, @price, @unit, @img, @badges, @origin, @cost_price, datetime('now'))
     ON CONFLICT(id) DO UPDATE SET category_group=excluded.category_group, cat=excluded.cat, kind=excluded.kind,
       name=excluded.name, desc=excluded.desc, price=excluded.price, unit=excluded.unit, img=excluded.img,
-      badges=excluded.badges, origin=excluded.origin, updated_at=datetime('now')
+      badges=excluded.badges, origin=excluded.origin, cost_price=excluded.cost_price, updated_at=datetime('now')
   `);
   let imported = 0;
   const importAll = db.transaction(() => {
@@ -150,6 +170,7 @@ router.post('/import.xlsx', requireAdmin, uploadExcel.single('file'), (req, res)
         id, category_group, cat, kind: String(row.kind || '').trim() || null, name,
         desc: String(row.desc || ''), price, unit, img: String(row.img || ''),
         badges: JSON.stringify(badgesArr), origin: String(row.origin || ''),
+        cost_price: Math.max(0, Math.round(Number(row.cost_price) || 0)),
       });
       imported++;
     });

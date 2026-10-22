@@ -55,7 +55,10 @@ environment variables), and point your web server's document root at
   delivery-distance pricing, replace placeholder product photos via the
   admin dashboard, and verify branch GPS coordinates.
 
-## What is new in v1.9
+## What is new in v2.0
+The Cooking Hub: 78 recipes and 8 butcher's guides with search, filters, sharing, comments, and a full Recipes manager in the admin panel (photos are yours to upload). See `CHANGELOG.md` and the Cooking Hub section of `DOCUMENTATION.md`.
+
+## What was new in v1.9
 Install prompt for phones and PCs, plus automatic update checks. See `CHANGELOG.md` and `DOCUMENTATION.md`.
 
 ## What is in this version (v1.8)

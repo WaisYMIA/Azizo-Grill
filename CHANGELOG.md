@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.0 — 2026-10-22
+- **Cooking Hub** (`recipes.html`, "Home of Cooking"): 78 recipes and 8 butcher's guides, covering beef, goat, lamb and mutton, chicken, pork, fish, mince and sausages, offal and traditional dishes, nyama choma and grills, and ready-to-eat favourites (shawarma, smokie pasua, samosas, fried chicken, fish and chips). Recipes are classic, well-loved dishes written for Azizo; they are not copied from other sites and carry no made-up ratings.
+- **Search and filters**: type a meat or ingredient, pick a category chip, cooking style, cuisine, difficulty or maximum time, sort by featured, readers' top rated, newest, quickest or A to Z. Tabs for Recipes, Blog & Tips and My Cookbook (hearts saved on the device).
+- **Recipe pages** (`recipe.html?r=...`): ingredients you can tick off, method, butcher's tip, print, "Order the meat for this" on WhatsApp, and rich-result recipe markup for Google.
+- **Sharing**: WhatsApp, Facebook, X, Telegram, Pinterest, LinkedIn, email, copy link, phone share sheet, and "Send full recipe on WhatsApp" (ingredients and method as a message).
+- **Engagement**: star ratings and comments with one level of replies, held for approval by default (or auto-publish in settings); "Share your recipe or ask us anything" form; WhatsApp, Facebook and branch links.
+- **Admin > Recipes** (like a small WordPress): Library with search, filters and bulk publish / draft / feature / move / delete; full editor with drafts, slug, badge, tags and photo; Categories (add, rename, reorder, delete); Comments moderation with replies as Azizo; Reader submissions inbox with "Create draft from this"; Images library (upload, pick, copy address, delete); Settings and backup (auto-approve comments, download or restore recipes.json, sitemap lines).
+- **Photos**: none are included. Upload your own in Admin > Recipes > Images or inside any recipe; they are resized to 1600 px automatically. Without a photo a card shows its category icon.
+- Both backends (Node and PHP) have the new API; existing databases add the tables and load the starter content on first run. Static hosting without the backend still shows all recipes from `recipes.json` (comments and the form turn into WhatsApp links).
+
 ## v1.9 — 2026-10-21
 - **Install the app**: on first visit, phones and PCs (Chrome, Edge, Android; Safari on iPhone shows "Share → Add to Home Screen" steps) get an "Install the Azizo app" bar. "Not now" hides it for 7 days; it never shows again once installed or when already running as an app. A footer "Install app" link brings it back.
 - **Automatic updates**: the app checks for a new version when opened, when you return to it, and every 30 minutes. When one is found, an "A new version is ready — Update now" bar appears; tapping it reloads into the new version. Footer shows "App v1.9 · Check for updates" for a manual check.

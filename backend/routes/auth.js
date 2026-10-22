@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { signCustomerToken, signAdminToken } = require('../middleware/auth');
+const { signCustomerToken, signAdminToken, signStaffToken } = require('../middleware/auth');
 const router = express.Router();
 router.post('/register', (req, res) => {
   const { name, phone, password } = req.body;
@@ -25,5 +25,13 @@ router.post('/admin-login', (req, res) => {
   const { password } = req.body;
   if (!password || password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Incorrect admin password' });
   res.json({ token: signAdminToken() });
+});
+// Staff sign in with their own password (STAFF_PASSWORD in .env) — it opens staff.html only
+// (orders, stock, today's summary), never the admin tool. Left unset, staff login stays off.
+router.post('/staff-login', (req, res) => {
+  const { password } = req.body || {};
+  if (!process.env.STAFF_PASSWORD) return res.status(503).json({ error: 'Staff login is not set up yet — ask the admin to set STAFF_PASSWORD on the server' });
+  if (!password || password !== process.env.STAFF_PASSWORD) return res.status(401).json({ error: 'Incorrect staff password' });
+  res.json({ token: signStaffToken() });
 });
 module.exports = router;

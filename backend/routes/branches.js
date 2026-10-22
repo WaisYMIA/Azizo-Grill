@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requireStaff } = require('../middleware/auth');
 const router = express.Router();
 
 // Branch details change the moment admin edits them, and customers' checkout pickers
@@ -23,7 +23,7 @@ router.get('/', noStore, (req, res) => {
   res.json({ branches: rows.map(toBranch) });
 });
 
-router.get('/all', requireAdmin, noStore, (req, res) => {
+router.get('/all', requireStaff, noStore, (req, res) => {
   const rows = db.prepare('SELECT * FROM branches ORDER BY is_main DESC, sort_order, name').all();
   res.json({ branches: rows.map(toBranch) });
 });

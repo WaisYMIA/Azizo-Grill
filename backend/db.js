@@ -270,4 +270,35 @@ db.exec(`CREATE TABLE IF NOT EXISTS reviews (
   created_at TEXT DEFAULT (datetime('now'))
 )`);
 
+// ---- Cooking hub: recipes, blog posts, comments, reader submissions (v2.0) ----
+db.exec(`CREATE TABLE IF NOT EXISTS recipe_cats (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, icon TEXT DEFAULT '', sort_order INTEGER DEFAULT 0)`);
+db.exec(`CREATE TABLE IF NOT EXISTS recipes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL DEFAULT 'recipe', slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
+  category TEXT DEFAULT '', style TEXT DEFAULT '', cuisine TEXT DEFAULT '', difficulty TEXT DEFAULT '',
+  prep_min INTEGER DEFAULT 0, cook_min INTEGER DEFAULT 0, servings INTEGER DEFAULT 0,
+  summary TEXT DEFAULT '', ingredients TEXT DEFAULT '', steps TEXT DEFAULT '', tips TEXT DEFAULT '', body TEXT DEFAULT '',
+  tags TEXT DEFAULT '', badge TEXT DEFAULT '', image TEXT DEFAULT '', featured INTEGER DEFAULT 0, status TEXT NOT NULL DEFAULT 'published',
+  created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS recipe_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, recipe_id INTEGER NOT NULL, parent_id INTEGER DEFAULT 0, name TEXT, comment TEXT,
+  rating INTEGER DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', is_staff INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now'))
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS recipe_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT DEFAULT 'recipe', name TEXT, contact TEXT, title TEXT, message TEXT,
+  status TEXT NOT NULL DEFAULT 'new', created_at TEXT DEFAULT (datetime('now'))
+)`);
+if (db.prepare('SELECT COUNT(*) AS n FROM recipes').get().n === 0) {
+  const seed = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'data', 'recipes-seed.json'), 'utf8'));
+  const ic = db.prepare('INSERT OR IGNORE INTO recipe_cats (name, icon, sort_order) VALUES (?, ?, ?)');
+  const ir = db.prepare(`INSERT INTO recipes (kind, slug, title, category, style, cuisine, difficulty, prep_min, cook_min, servings, summary, ingredients, steps, tips, body, tags, badge, image, featured, status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?)`);
+  db.transaction(() => {
+    for (const c of seed.categories) ic.run(c.name, c.icon || '', c.sort);
+    for (const r of seed.recipes) ir.run(r.kind, r.slug, r.title, r.category, r.style, r.cuisine, r.difficulty, r.prep_min, r.cook_min, r.servings, r.summary,
+      (r.ingredients || []).join('\n'), (r.steps || []).join('\n'), r.tips || '', r.body || '', r.tags || '', r.badge || '', r.image || '', r.featured ? 1 : 0, r.created_at, r.created_at);
+  })();
+}
+
+db.metaGet = metaGet; db.metaSet = metaSet;
 module.exports = db;

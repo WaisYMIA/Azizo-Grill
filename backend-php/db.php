@@ -28,5 +28,19 @@ function get_db(): PDO {
         }
     }
 
+    // v2.0: first run only - load the starter recipes and blog posts.
+    if ((int)$pdo->query('SELECT COUNT(*) FROM recipes')->fetchColumn() === 0) {
+        $seed = json_decode((string)@file_get_contents(__DIR__ . '/data/recipes-seed.json'), true);
+        if (is_array($seed)) {
+            $ic = $pdo->prepare('INSERT IGNORE INTO recipe_cats (name, icon, sort_order) VALUES (?, ?, ?)');
+            foreach ($seed['categories'] as $c) $ic->execute([$c['name'], $c['icon'] ?? '', (int)$c['sort']]);
+            $ir = $pdo->prepare('INSERT INTO recipes (kind, slug, title, category, style, cuisine, difficulty, prep_min, cook_min, servings, summary, ingredients, steps, tips, body, tags, badge, image, featured, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+            foreach ($seed['recipes'] as $r) {
+                $ir->execute([$r['kind'], $r['slug'], $r['title'], $r['category'], $r['style'], $r['cuisine'], $r['difficulty'], (int)$r['prep_min'], (int)$r['cook_min'], (int)$r['servings'], $r['summary'],
+                    implode("\n", $r['ingredients'] ?? []), implode("\n", $r['steps'] ?? []), $r['tips'] ?? '', $r['body'] ?? '', $r['tags'] ?? '', $r['badge'] ?? '', $r['image'] ?? '', !empty($r['featured']) ? 1 : 0, 'published', $r['created_at'] . ' 00:00:00', $r['created_at'] . ' 00:00:00']);
+            }
+        }
+    }
+
     return $pdo;
 }
