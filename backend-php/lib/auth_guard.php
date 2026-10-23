@@ -24,3 +24,17 @@ function require_staff(): array {
     if (!in_array($payload['role'] ?? null, ['staff', 'admin'], true)) json_error('Staff access required', 403);
     return $payload;
 }
+
+/** Kitchens Admin (kitchens-admin.html): role 'kitchens', or the main admin. */
+function require_kitchens_admin(): array {
+    $payload = require_auth();
+    if (!in_array($payload['role'] ?? null, ['kitchens', 'admin'], true)) json_error('Kitchens admin access required', 403);
+    return $payload;
+}
+
+/** A signed-in Kitchen Partner; the payload carries kitchenId. */
+function require_kitchen(): array {
+    $payload = require_auth();
+    if (($payload['role'] ?? null) !== 'kitchen' || empty($payload['kitchenId'])) json_error('Kitchen partner access required', 403);
+    return $payload;
+}

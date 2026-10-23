@@ -1,6 +1,6 @@
 // Azizo Butchery & Grill — Service Worker (multi-page site)
 // Bump CACHE_NAME whenever shared assets change so visitors get the update.
-const CACHE_NAME = 'azizo-v19';
+const CACHE_NAME = 'azizo-v30';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -12,7 +12,6 @@ const CORE_ASSETS = [
   './areas.html',
   './areas.js',
   './outdoor-events.html',
-  './recipes.html',
   './about.html',
   './reviews.html',
   './faq.html',
@@ -20,6 +19,16 @@ const CORE_ASSETS = [
   './styles.css',
   './app.js',
   './pwa.js',
+  './recipes.html',
+  './kitchens.html',
+  './kitchens.js',
+  './kitchen-partners.html',
+  './kk.css',
+  './kk-common.js',
+  './kk-config.js',
+  './recipe.html',
+  './recipes.js',
+  './recipes.json',
   './products.json',
   './branches.json',
   './manifest.json',
@@ -68,7 +77,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   // Staff and admin screens are working tools — always fetch them fresh, never from the cache.
-  if (/\/(staff|rider|admin)(-reports|-areas|-reviews)?\.(html|js)$/.test(url.pathname)) {
+  if (/\/(staff|rider|admin|kitchen-portal|kitchens-admin)(-reports|-areas|-reviews)?\.(html|js)$/.test(url.pathname)) {
     return;
   }
   event.respondWith(

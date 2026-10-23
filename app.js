@@ -2470,13 +2470,29 @@
     renderPlanSummary();
   }
 
+  let planCat = 'All', planSearch = '';
+  function renderPlanCats(){
+    const bar = document.getElementById('planCats'); if(!bar) return;
+    const cats = ['All', 'Selected'].concat([...new Set(freshItems.map(i=>i.cat))]);
+    bar.innerHTML = cats.map(c=>{
+      const n = c==='All' ? freshItems.length : c==='Selected' ? Object.keys(planQty).length : freshItems.filter(i=>i.cat===c).length;
+      return `<button type="button" class="chip ${planCat===c?'active':''}" onclick="setPlanCat('${c.replace(/'/g,"\\'")}')">${c} <small>${n}</small></button>`;
+    }).join('');
+  }
+  function setPlanCat(c){ planCat = c; renderPlanCats(); renderPlannerItems(); }
+  function setPlanSearch(v){ planSearch = String(v||'').trim().toLowerCase(); renderPlannerItems(); }
+  function jumpToPlan(){ const el = document.querySelector('.planner-summary'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
+
   function renderPlannerItems(){
     const wrap = document.getElementById('plannerItems');
     if(!wrap) return;
-    wrap.innerHTML = freshItems.map(i=>{
+    renderPlanCats();
+    const shown = freshItems.filter(i => (planCat==='All' || planCat==='Selected' ? true : i.cat===planCat) && (planCat!=='Selected' || planQty[i.id]) && (!planSearch || (i.name+' '+i.cat).toLowerCase().includes(planSearch)));
+    if(!shown.length){ wrap.innerHTML = '<p class="plan-none">No items match. Try another category or word.</p>'; return; }
+    wrap.innerHTML = shown.map(i=>{
       const qty = planQty[i.id] || 0;
       return `
-      <div class="plan-item-card">
+      <div class="plan-item-card${qty ? ' sel' : ''}">
         <div class="plan-item-top">
           <span class="tag-cat"><span class="dot ${i.kind==='red'?'dot-red':'dot-white'}"></span>${i.cat}</span>
         </div>
@@ -2521,6 +2537,12 @@
     const totalsEl = document.getElementById('planTotals');
     const addBtn = document.getElementById('addPlanBtn');
     const durationLabel = planDurations.find(d=>d.id===planDuration).label;
+    const pill = document.getElementById('planJump');
+    if(pill){
+      const sub = ids.reduce((sum,id)=>sum + freshItems.find(f=>f.id===id).price * planQty[id], 0);
+      pill.innerHTML = ids.length ? `🧺 <b>${ids.length}</b> item${ids.length===1?'':'s'} · KSh ${(sub - Math.round(sub*PLAN_DISCOUNT)).toLocaleString()} <span>View plan ↓</span>` : '🧺 Your plan is empty';
+      pill.classList.toggle('has', ids.length>0);
+    }
 
     if(ids.length === 0){
       emptyEl.style.display = 'block';

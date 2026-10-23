@@ -25,6 +25,8 @@ define('JWT_SECRET', getenv('JWT_SECRET') ?: 'dev-only-secret-change-me-before-l
 // passcodes in app.js) — used by /api/auth/admin-login.php and required by
 // every admin-only endpoint (product writes, order list, Excel import/export).
 define('ADMIN_PASSWORD', getenv('ADMIN_PASSWORD') ?: 'majani90');
+// Kitchens Admin password: opens kitchens-admin.html only. Empty = that login is switched off (the main admin password also works there).
+define('KITCHENS_ADMIN_PASSWORD', getenv('KITCHENS_ADMIN_PASSWORD') ?: '');
 // Staff (counter/kitchen/dispatch) password for staff.html. Empty = staff login switched off.
 define('STAFF_PASSWORD', getenv('STAFF_PASSWORD') ?: '');
 // Hours ahead of UTC used for "today" in the staff totals (Nairobi = 3).

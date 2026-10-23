@@ -42,5 +42,15 @@ function get_db(): PDO {
         }
     }
 
+    // v3.0: first run only - load the Azizo Kitchens starter dishes and settings.
+    if ((int)$pdo->query('SELECT COUNT(*) FROM kk_dishes')->fetchColumn() === 0) {
+        $seed = json_decode((string)@file_get_contents(__DIR__ . '/data/kitchens-seed.json'), true);
+        if (is_array($seed)) {
+            $ik = $pdo->prepare('INSERT INTO kk_dishes (slug, name, tradition, category, meal, price, serves, description, components, method, options, packaging, tips, image, active, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)');
+            foreach ($seed['dishes'] as $d) $ik->execute([$d['slug'], $d['name'], $d['tradition'], $d['category'], $d['meal'], (int)$d['price'], (int)$d['serves'], $d['description'], implode("\n", $d['components']), implode("\n", $d['method']), json_encode($d['options'] ?? []), $d['packaging'], $d['tips'] ?? '', $d['image'] ?? '', (int)$d['sort']]);
+            $pdo->prepare('INSERT IGNORE INTO kk_meta (skey, svalue) VALUES (?, ?)')->execute(['kk_settings', json_encode($seed['settings'])]);
+        }
+    }
+
     return $pdo;
 }
